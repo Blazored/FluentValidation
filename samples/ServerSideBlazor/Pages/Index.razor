@@ -1,0 +1,35 @@
+﻿@page "/"
+
+<h1>Blazored FluentValidation</h1>
+
+<EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
+    <FluentValidationValidator />
+    <ValidationSummary />
+
+    <p>
+        <label>Name: </label>
+        <InputText @bind-Value="@Person.Name" />
+    </p>
+
+    <p>
+        <label>Age: </label>
+        <InputNumber @bind-Value="@Person.Age" />
+    </p>
+
+    <p>
+        <label>Email Address: </label>
+        <InputText @bind-Value="@Person.EmailAddress" />
+    </p>
+
+    <button type="submit">Save</button>
+
+</EditForm>
+
+@code {
+    Person Person { get; set; } = new Person();
+
+    void SubmitValidForm()
+    {
+        Console.WriteLine("Form Submitted Successfully!");
+    }
+}
