@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="8.5.0-preview1" />
+    <PackageReference Include="FluentValidation" Version="8.5.0-preview2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor" Version="3.0.0-preview6.19307.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="3.0.0-preview6.19307.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.DevServer" Version="3.0.0-preview6.19307.2" PrivateAssets="all" />
@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Blazored.FluentValidation\Blazored.FluentValidation.csproj" />
+    <ProjectReference Include="..\Shared\SharedModels\SharedModels.csproj" />
   </ItemGroup>
 
 </Project>

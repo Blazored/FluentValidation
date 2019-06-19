@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace ClientSideBlazor.Models
+namespace SharedModel
 {
     public class Person
     {

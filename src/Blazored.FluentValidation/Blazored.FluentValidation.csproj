@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="8.5.0-preview1" />
+    <PackageReference Include="FluentValidation" Version="8.5.0-preview2" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Browser" Version="3.0.0-preview6.19307.2" />
   </ItemGroup>
 
