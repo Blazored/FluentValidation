@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Blazored.FluentValidation\Blazored.FluentValidation.csproj" />
+    <ProjectReference Include="..\Shared\SharedModels\SharedModels.csproj" />
   </ItemGroup>
 
 </Project>
