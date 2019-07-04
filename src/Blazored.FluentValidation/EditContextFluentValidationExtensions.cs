@@ -32,14 +32,14 @@ namespace Blazored.FluentValidation
             return editContext;
         }
 
-        private static void ValidateModel(EditContext editContext, ValidationMessageStore messages, IValidator validator = null)
+        private static async void ValidateModel(EditContext editContext, ValidationMessageStore messages, IValidator validator = null)
         {
             if (validator == null)
             {
                 validator = GetValidatorForModel(editContext.Model);
             }
 
-            var validationResults = validator.Validate(editContext.Model);
+            var validationResults = await validator.ValidateAsync(editContext.Model);
 
             messages.Clear();
             foreach (var validationResult in validationResults.Errors)
@@ -50,7 +50,7 @@ namespace Blazored.FluentValidation
             editContext.NotifyValidationStateChanged();
         }
 
-        private static void ValidateField(EditContext editContext, ValidationMessageStore messages, in FieldIdentifier fieldIdentifier, IValidator validator = null)
+        private static async void ValidateField(EditContext editContext, ValidationMessageStore messages, FieldIdentifier fieldIdentifier, IValidator validator = null)
         {
             var properties = new[] { fieldIdentifier.FieldName };
             var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
@@ -60,7 +60,7 @@ namespace Blazored.FluentValidation
                 validator = GetValidatorForModel(editContext.Model);
             }
 
-            var validationResults = validator.Validate(context);
+            var validationResults = await validator.ValidateAsync(context);
 
             messages.Clear(fieldIdentifier);
             messages.AddRange(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
