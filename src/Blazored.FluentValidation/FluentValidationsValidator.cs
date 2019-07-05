@@ -11,6 +11,8 @@ namespace Blazored.FluentValidation
 
         [Parameter] IValidator Validator { get; set; }
 
+        [Inject] IServiceProvider ServiceProvider { get; set; }
+
         protected override void OnInit()
         {
             if (CurrentEditContext == null)
@@ -21,7 +23,7 @@ namespace Blazored.FluentValidation
             }
 
             Console.WriteLine(Validator == null);
-            CurrentEditContext.AddFluentValidation(Validator);
+            CurrentEditContext.AddFluentValidation(ServiceProvider, Validator);
         }
     }
 }
