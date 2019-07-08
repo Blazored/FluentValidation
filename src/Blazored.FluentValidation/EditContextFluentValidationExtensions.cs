@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -9,12 +10,12 @@ namespace Blazored.FluentValidation
 {
     public static class EditContextFluentValidationExtensions
     {
-        public static EditContext AddFluentValidation(this EditContext editContext)
+        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider)
         {
-            return AddFluentValidation(editContext, null);
+            return AddFluentValidation(editContext, serviceProvider, null);
         }
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IValidator validator)
+        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, IValidator validator)
         {
             if (editContext == null)
             {
@@ -24,22 +25,22 @@ namespace Blazored.FluentValidation
             var messages = new ValidationMessageStore(editContext);
 
             editContext.OnValidationRequested +=
-                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, validator);
+                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, validator);
 
             editContext.OnFieldChanged +=
-                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, validator);
+                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, validator);
 
             return editContext;
         }
 
-        private static void ValidateModel(EditContext editContext, ValidationMessageStore messages, IValidator validator = null)
+        private static async void ValidateModel(EditContext editContext, ValidationMessageStore messages, IServiceProvider serviceProvider, IValidator validator = null)
         {
             if (validator == null)
             {
-                validator = GetValidatorForModel(editContext.Model);
+                validator = GetValidatorForModel(serviceProvider, editContext.Model);
             }
 
-            var validationResults = validator.Validate(editContext.Model);
+            var validationResults = await validator.ValidateAsync(editContext.Model);
 
             messages.Clear();
             foreach (var validationResult in validationResults.Errors)
@@ -50,17 +51,17 @@ namespace Blazored.FluentValidation
             editContext.NotifyValidationStateChanged();
         }
 
-        private static void ValidateField(EditContext editContext, ValidationMessageStore messages, in FieldIdentifier fieldIdentifier, IValidator validator = null)
+        private static async void ValidateField(EditContext editContext, ValidationMessageStore messages, FieldIdentifier fieldIdentifier, IServiceProvider serviceProvider, IValidator validator = null)
         {
             var properties = new[] { fieldIdentifier.FieldName };
             var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
             if (validator == null)
             {
-                validator = GetValidatorForModel(editContext.Model);
+                validator = GetValidatorForModel(serviceProvider, editContext.Model);
             }
 
-            var validationResults = validator.Validate(context);
+            var validationResults = await validator.ValidateAsync(context);
 
             messages.Clear(fieldIdentifier);
             messages.AddRange(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
@@ -68,7 +69,7 @@ namespace Blazored.FluentValidation
             editContext.NotifyValidationStateChanged();
         }
 
-        private static IValidator GetValidatorForModel(object model)
+        private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model)
         {
             var abstractValidatorType = typeof(AbstractValidator<>).MakeGenericType(model.GetType());
 
@@ -89,9 +90,12 @@ namespace Blazored.FluentValidation
                 throw new TypeLoadException($"Unable to locate a validator of type {abstractValidatorType.FullName}");
             }
 
-            var modelValidatorInstance = (IValidator)Activator.CreateInstance(modelValidatorType);
+            if (serviceProvider == null)
+            {
+                return (IValidator)Activator.CreateInstance(modelValidatorType);
+            }
 
-            return modelValidatorInstance;
+            return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
         }
     }
 }
