@@ -7,13 +7,14 @@ namespace Blazored.FluentValidation
 {
     public class FluentValidationValidator : ComponentBase
     {
-        [CascadingParameter] EditContext CurrentEditContext { get; set; }
-
-        [Parameter] IValidator Validator { get; set; }
-
         [Inject] IServiceProvider ServiceProvider { get; set; }
 
-        protected override void OnInit()
+        [CascadingParameter] EditContext CurrentEditContext { get; set; }
+
+        [Parameter] public IValidator Validator { get; set; }
+
+
+        protected override void OnInitialized()
         {
             if (CurrentEditContext == null)
             {
