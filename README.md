@@ -22,7 +22,7 @@ Start by add the following using statement to your root `_Imports.razor`.
 
 You can then use it as follows within a `EditForm` component.
 
-```
+```html
 <EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
     <FluentValidationValidator />
     <ValidationSummary />
