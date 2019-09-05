@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="8.5.0-preview4" />
+    <PackageReference Include="FluentValidation" Version="8.5.0-preview5" />
   </ItemGroup>
 
   <ItemGroup>

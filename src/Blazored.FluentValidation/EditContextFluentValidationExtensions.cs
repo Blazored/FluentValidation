@@ -64,7 +64,7 @@ namespace Blazored.FluentValidation
             var validationResults = await validator.ValidateAsync(context);
 
             messages.Clear(fieldIdentifier);
-            messages.AddRange(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+            messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
 
             editContext.NotifyValidationStateChanged();
         }
