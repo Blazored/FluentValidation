@@ -23,7 +23,6 @@ namespace Blazored.FluentValidation
                     $"inside an {nameof(EditForm)}.");
             }
 
-            Console.WriteLine(Validator == null);
             CurrentEditContext.AddFluentValidation(ServiceProvider, Validator);
         }
     }
