@@ -71,13 +71,21 @@ namespace Blazored.FluentValidation
 
         private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model)
         {
+            var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+            if (serviceProvider != null)
+            {
+                if (serviceProvider.GetService(validatorType) is IValidator validator)
+                {
+                    return validator;
+                }
+            }
+
             var abstractValidatorType = typeof(AbstractValidator<>).MakeGenericType(model.GetType());
 
             Type modelValidatorType = null;
-
-            foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                modelValidatorType = a.GetTypes().FirstOrDefault(t => t.IsSubclassOf(abstractValidatorType));
+                modelValidatorType = assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(abstractValidatorType));
 
                 if (modelValidatorType != null)
                 {
@@ -87,12 +95,7 @@ namespace Blazored.FluentValidation
 
             if (modelValidatorType == null)
             {
-                throw new TypeLoadException($"Unable to locate a validator of type {abstractValidatorType.FullName}");
-            }
-
-            if (serviceProvider == null)
-            {
-                return (IValidator)Activator.CreateInstance(modelValidatorType);
+                throw new TypeLoadException($"Unable to locate a validator of type {validatorType.FullName} or {abstractValidatorType.FullName}");
             }
 
             return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
