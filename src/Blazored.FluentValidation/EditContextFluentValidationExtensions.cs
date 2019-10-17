@@ -58,7 +58,7 @@ namespace Blazored.FluentValidation
 
             if (validator == null)
             {
-                validator = GetValidatorForModel(serviceProvider, editContext.Model);
+                validator = GetValidatorForModel(serviceProvider, fieldIdentifier.Model);
             }
 
             var validationResults = await validator.ValidateAsync(context);

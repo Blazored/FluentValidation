@@ -6,7 +6,7 @@
     <RootNamespace>Blazored.FluentValidation</RootNamespace>
 
     <PackageId>Blazored.FluentValidation</PackageId>
-    <Version>1.1.5</Version>
+    <Version>1.1.6</Version>
     <Authors>Chris Sainty</Authors>
     <Description>A library for using FluentValidation with Blazor</Description>
     <Copyright>Copyright 2019 (c) Chris Sainty. All rights reserved.</Copyright>
