@@ -59,24 +59,6 @@ namespace Blazored.FluentValidation
             editContext.NotifyValidationStateChanged();
         }
 
-        private static async void ValidateModel1(EditContext editContext, ValidationMessageStore messages, IServiceProvider serviceProvider, IValidator validator = null)
-        {
-            if (validator == null)
-            {
-                validator = GetValidatorForModel(serviceProvider, editContext.Model);
-            }
-
-            var validationResults = await validator.ValidateAsync(editContext.Model);
-
-            messages.Clear();
-            foreach (var validationResult in validationResults.Errors)
-            {
-                messages.Add(editContext.Field(validationResult.PropertyName), validationResult.ErrorMessage);
-            }
-
-            editContext.NotifyValidationStateChanged();
-        }
-
         private static async void ValidateField(EditContext editContext, ValidationMessageStore messages, FieldIdentifier fieldIdentifier, IServiceProvider serviceProvider, IValidator validator = null)
         {
             var properties = new[] { fieldIdentifier.FieldName };
