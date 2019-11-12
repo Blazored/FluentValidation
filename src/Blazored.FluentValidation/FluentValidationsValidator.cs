@@ -12,6 +12,12 @@ namespace Blazored.FluentValidation
         [CascadingParameter] EditContext CurrentEditContext { get; set; }
 
         [Parameter] public IValidator Validator { get; set; }
+        
+        /// <summary>
+        /// When set to true, a field change will cause the whole model will be re-validated.
+        /// When set to false, only the field that changed will be re-validated.
+        /// </summary>
+        [Parameter] public bool AlwaysValidateFullModel { get; set; }
 
 
         protected override void OnInitialized()
@@ -23,7 +29,7 @@ namespace Blazored.FluentValidation
                     $"inside an {nameof(EditForm)}.");
             }
 
-            CurrentEditContext.AddFluentValidation(ServiceProvider, Validator);
+            CurrentEditContext.AddFluentValidation(ServiceProvider, Validator, AlwaysValidateFullModel);
         }
     }
 }

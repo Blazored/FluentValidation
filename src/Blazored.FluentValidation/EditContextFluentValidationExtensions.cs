@@ -12,10 +12,10 @@ namespace Blazored.FluentValidation
     {
         public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider)
         {
-            return AddFluentValidation(editContext, serviceProvider, null);
+            return AddFluentValidation(editContext, serviceProvider, null, false);
         }
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, IValidator validator)
+        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, IValidator validator, bool alwaysValidateFullModel)
         {
             if (editContext == null)
             {
@@ -27,13 +27,39 @@ namespace Blazored.FluentValidation
             editContext.OnValidationRequested +=
                 (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, validator);
 
-            editContext.OnFieldChanged +=
-                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, validator);
+            if (alwaysValidateFullModel)
+            {
+                editContext.OnFieldChanged +=
+                    (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, validator);
+            }
+            else
+            {
+                editContext.OnFieldChanged +=
+                    (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, validator);
+            }
 
             return editContext;
         }
 
         private static async void ValidateModel(EditContext editContext, ValidationMessageStore messages, IServiceProvider serviceProvider, IValidator validator = null)
+        {
+            if (validator == null)
+            {
+                validator = GetValidatorForModel(serviceProvider, editContext.Model);
+            }
+
+            var validationResults = await validator.ValidateAsync(editContext.Model);
+
+            messages.Clear();
+            foreach (var validationResult in validationResults.Errors)
+            {
+                messages.Add(editContext.Field(validationResult.PropertyName), validationResult.ErrorMessage);
+            }
+
+            editContext.NotifyValidationStateChanged();
+        }
+
+        private static async void ValidateModel1(EditContext editContext, ValidationMessageStore messages, IServiceProvider serviceProvider, IValidator validator = null)
         {
             if (validator == null)
             {
