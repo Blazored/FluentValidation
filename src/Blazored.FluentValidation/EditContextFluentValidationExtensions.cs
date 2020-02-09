@@ -1,43 +1,51 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
-using System.Reflection;
 
 namespace Blazored.FluentValidation
 {
     public static class EditContextFluentValidationExtensions
     {
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider)
+        public static EditContext AddFluentValidation(this EditContext editContext, IValidatorFactory validatorFactory)
         {
-            return AddFluentValidation(editContext, serviceProvider, null);
+            return AddFluentValidation(editContext, validatorFactory, null);
         }
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, IValidator validator)
+        public static EditContext AddFluentValidation(this EditContext editContext, IValidatorFactory validatorFactory, IValidator validator)
         {
             if (editContext == null)
             {
                 throw new ArgumentNullException(nameof(editContext));
             }
 
+            if (validatorFactory == null)
+            {
+                throw new ArgumentNullException(nameof(validatorFactory));
+            }
+
             var messages = new ValidationMessageStore(editContext);
 
             editContext.OnValidationRequested +=
-                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, validator);
+                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, validatorFactory, validator);
 
             editContext.OnFieldChanged +=
-                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, validator);
+                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, validatorFactory, validator);
 
             return editContext;
         }
 
-        private static async void ValidateModel(EditContext editContext, ValidationMessageStore messages, IServiceProvider serviceProvider, IValidator validator = null)
+        private static async void ValidateModel(EditContext editContext, ValidationMessageStore messages, IValidatorFactory validatorFactory, IValidator validator = null)
         {
             if (validator == null)
             {
-                validator = GetValidatorForModel(serviceProvider, editContext.Model);
+                validator = validatorFactory.GetValidator(editContext.Model.GetType());
+            }
+
+            if (validator == null)
+            {
+                throw new TypeLoadException($"Unable to locate a validator of type {typeof(IValidator<>).MakeGenericType(editContext.Model.GetType()).GetGenericTypeName()}");
             }
 
             var validationResults = await validator.ValidateAsync(editContext.Model);
@@ -51,54 +59,32 @@ namespace Blazored.FluentValidation
             editContext.NotifyValidationStateChanged();
         }
 
-        private static async void ValidateField(EditContext editContext, ValidationMessageStore messages, FieldIdentifier fieldIdentifier, IServiceProvider serviceProvider, IValidator validator = null)
+        private static async void ValidateField(EditContext editContext, ValidationMessageStore messages, FieldIdentifier fieldIdentifier, IValidatorFactory validatorFactory, IValidator validator = null)
         {
-            var properties = new[] { fieldIdentifier.FieldName };
-            var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
-
             if (validator == null)
             {
-                validator = GetValidatorForModel(serviceProvider, fieldIdentifier.Model);
+                validator = validatorFactory.GetValidator(fieldIdentifier.Model.GetType());
             }
 
-            var validationResults = await validator.ValidateAsync(context);
-
-            messages.Clear(fieldIdentifier);
-            messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
-
-            editContext.NotifyValidationStateChanged();
-        }
-
-        private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model)
-        {
-            var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
-            if (serviceProvider != null)
+            if (validator != null)
             {
-                if (serviceProvider.GetService(validatorType) is IValidator validator)
+                var descriptor = validator.CreateDescriptor(); 
+                var fieldValidators = descriptor.GetValidatorsForMember(fieldIdentifier.FieldName);
+                if (!fieldValidators.Any())
                 {
-                    return validator;
+                    return;
                 }
+
+                var properties = new[] { fieldIdentifier.FieldName };
+                var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+
+                var validationResults = await validator.ValidateAsync(context);
+
+                messages.Clear(fieldIdentifier);
+                messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+
+                editContext.NotifyValidationStateChanged();
             }
-
-            var abstractValidatorType = typeof(AbstractValidator<>).MakeGenericType(model.GetType());
-
-            Type modelValidatorType = null;
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                modelValidatorType = assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(abstractValidatorType));
-
-                if (modelValidatorType != null)
-                {
-                    break;
-                }
-            }
-
-            if (modelValidatorType == null)
-            {
-                throw new TypeLoadException($"Unable to locate a validator of type {validatorType.FullName} or {abstractValidatorType.FullName}");
-            }
-
-            return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
         }
     }
 }
