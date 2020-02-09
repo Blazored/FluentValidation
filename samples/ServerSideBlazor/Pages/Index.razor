@@ -26,6 +26,35 @@
         <ValidationMessage For="@(() => Person.EmailAddress)" />
     </p>
 
+    <p>
+        <label>Address: Line 1: </label>
+        <InputText @bind-Value="@Person.Address.Line1" />
+        <ValidationMessage For="@(() => Person.Address.Line1)" />
+    </p>
+
+    <p>
+        <label>Address: Line 2: </label>
+        <InputText @bind-Value="@Person.Address.Line2" />
+    </p>
+
+    <p>
+        <label>Address: Town: </label>
+        <InputText @bind-Value="@Person.Address.Town" />
+        <ValidationMessage For="@(() => Person.Address.Town)" />
+    </p>
+
+    <p>
+        <label>Address: County: </label>
+        <InputText @bind-Value="@Person.Address.County" />
+        <ValidationMessage For="@(() => Person.Address.County)" />
+    </p>
+
+    <p>
+        <label>Address: Postcode: </label>
+        <InputText @bind-Value="@Person.Address.Postcode" />
+        <ValidationMessage For="@(() => Person.Address.Postcode)" />
+    </p>
+
     <button type="submit">Save</button>
 
 </EditForm>

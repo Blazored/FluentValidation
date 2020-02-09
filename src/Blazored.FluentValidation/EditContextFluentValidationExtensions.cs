@@ -10,6 +10,8 @@ namespace Blazored.FluentValidation
 {
     public static class EditContextFluentValidationExtensions
     {
+        private readonly static char[] separators = new[] { '.', '[' };
+
         public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider)
         {
             return AddFluentValidation(editContext, serviceProvider, null);
@@ -45,7 +47,8 @@ namespace Blazored.FluentValidation
             messages.Clear();
             foreach (var validationResult in validationResults.Errors)
             {
-                messages.Add(editContext.Field(validationResult.PropertyName), validationResult.ErrorMessage);
+                var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
+                messages.Add(fieldIdentifier, validationResult.ErrorMessage);
             }
 
             editContext.NotifyValidationStateChanged();
@@ -56,17 +59,17 @@ namespace Blazored.FluentValidation
             var properties = new[] { fieldIdentifier.FieldName };
             var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
-            if (validator == null)
+            validator = validator ?? GetValidatorForModel(serviceProvider, fieldIdentifier.Model);
+
+            if (validator != null)
             {
-                validator = GetValidatorForModel(serviceProvider, fieldIdentifier.Model);
+                var validationResults = await validator.ValidateAsync(context);
+
+                messages.Clear(fieldIdentifier);
+                messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+
+                editContext.NotifyValidationStateChanged();
             }
-
-            var validationResults = await validator.ValidateAsync(context);
-
-            messages.Clear(fieldIdentifier);
-            messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
-
-            editContext.NotifyValidationStateChanged();
         }
 
         private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model)
@@ -95,10 +98,65 @@ namespace Blazored.FluentValidation
 
             if (modelValidatorType == null)
             {
-                throw new TypeLoadException($"Unable to locate a validator of type {validatorType.FullName} or {abstractValidatorType.FullName}");
+                return null;
             }
 
             return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
+        }
+
+        private static FieldIdentifier ToFieldIdentifier(EditContext editContext, string propertyPath)
+        {
+            // This code is taken from an article by Steve Sanderson (https://blog.stevensanderson.com/2019/09/04/blazor-fluentvalidation/)
+            // all credit goes to him for this code.
+
+            // This method parses property paths like 'SomeProp.MyCollection[123].ChildProp'
+            // and returns a FieldIdentifier which is an (instance, propName) pair. For example,
+            // it would return the pair (SomeProp.MyCollection[123], "ChildProp"). It traverses
+            // as far into the propertyPath as it can go until it finds any null instance.
+
+            var obj = editContext.Model;
+
+            while (true)
+            {
+                var nextTokenEnd = propertyPath.IndexOfAny(separators);
+                if (nextTokenEnd < 0)
+                {
+                    return new FieldIdentifier(obj, propertyPath);
+                }
+
+                var nextToken = propertyPath.Substring(0, nextTokenEnd);
+                propertyPath = propertyPath.Substring(nextTokenEnd + 1);
+
+                object newObj;
+                if (nextToken.EndsWith("]"))
+                {
+                    // It's an indexer
+                    // This code assumes C# conventions (one indexer named Item with one param)
+                    nextToken = nextToken.Substring(0, nextToken.Length - 1);
+                    var prop = obj.GetType().GetProperty("Item");
+                    var indexerType = prop.GetIndexParameters()[0].ParameterType;
+                    var indexerValue = Convert.ChangeType(nextToken, indexerType);
+                    newObj = prop.GetValue(obj, new object[] { indexerValue });
+                }
+                else
+                {
+                    // It's a regular property
+                    var prop = obj.GetType().GetProperty(nextToken);
+                    if (prop == null)
+                    {
+                        throw new InvalidOperationException($"Could not find property named {nextToken} on object of type {obj.GetType().FullName}.");
+                    }
+                    newObj = prop.GetValue(obj);
+                }
+
+                if (newObj == null)
+                {
+                    // This is as far as we can go
+                    return new FieldIdentifier(obj, nextToken);
+                }
+
+                obj = newObj;
+            }
         }
     }
 }
