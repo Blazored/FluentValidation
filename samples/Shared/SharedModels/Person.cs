@@ -1,13 +1,14 @@
 ﻿using FluentValidation;
 using System.Threading.Tasks;
 
-namespace SharedModel
+namespace SharedModels
 {
     public class Person
     {
         public string Name { get; set; }
         public int Age { get; set; }
         public string EmailAddress { get; set; }
+        public Address Address { get; set; } = new Address();
     }
 
     public class PersonValidator : AbstractValidator<Person>
@@ -24,6 +25,8 @@ namespace SharedModel
             RuleFor(x => x.Name).MustAsync(async (name, cancellationToken) => await IsUniqueAsync(name))
                                 .WithMessage("Name must be unique")
                                 .When(person => !string.IsNullOrEmpty(person.Name));
+
+            RuleFor(p => p.Address).SetValidator(new AddressValidator());
         }
 
         private async Task<bool> IsUniqueAsync(string name)
