@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.29006.145
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{D5C6DCA9-C2BD-4117-BCCC-19E36E8406AB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientSideBlazor", "samples\ClientSideBlazor\ClientSideBlazor.csproj", "{862C6849-B8FC-4062-AF84-A2DB37B9E43E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorWebAssembly", "samples\BlazorWebAssembly\BlazorWebAssembly.csproj", "{862C6849-B8FC-4062-AF84-A2DB37B9E43E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerSideBlazor", "samples\ServerSideBlazor\ServerSideBlazor.csproj", "{00D9475F-C3D2-4784-82DE-E1D6991761EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorServer", "samples\BlazorServer\BlazorServer.csproj", "{00D9475F-C3D2-4784-82DE-E1D6991761EB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazored.FluentValidation", "src\Blazored.FluentValidation\Blazored.FluentValidation.csproj", "{12C755E1-0D7F-4D89-98C9-BD5AF560E0B5}"
 EndProject

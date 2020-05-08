@@ -5,7 +5,7 @@
 <hr class="mb-5" />
 
 <EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
-    <FluentValidationValidator />
+    <FluentValidationValidator DisableAssemblyScanning="@true" />
     <ValidationSummary />
 
     <p>

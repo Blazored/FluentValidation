@@ -12,12 +12,7 @@ namespace Blazored.FluentValidation
     {
         private readonly static char[] separators = new[] { '.', '[' };
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider)
-        {
-            return AddFluentValidation(editContext, serviceProvider, null);
-        }
-
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, IValidator validator)
+        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator)
         {
             if (editContext == null)
             {
@@ -27,41 +22,50 @@ namespace Blazored.FluentValidation
             var messages = new ValidationMessageStore(editContext);
 
             editContext.OnValidationRequested +=
-                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, validator);
+                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, disableAssemblyScanning, validator);
 
             editContext.OnFieldChanged +=
-                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, validator);
+                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
 
             return editContext;
         }
 
-        private static async void ValidateModel(EditContext editContext, ValidationMessageStore messages, IServiceProvider serviceProvider, IValidator validator = null)
+        private static async void ValidateModel(EditContext editContext,
+                                                ValidationMessageStore messages,
+                                                IServiceProvider serviceProvider,
+                                                bool disableAssemblyScanning,
+                                                IValidator validator = null)
         {
-            if (validator == null)
+            validator = validator ?? GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+
+            if (validator is object)
             {
-                validator = GetValidatorForModel(serviceProvider, editContext.Model);
+                var validationResults = await validator.ValidateAsync(editContext.Model);
+
+                messages.Clear();
+                foreach (var validationResult in validationResults.Errors)
+                {
+                    var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
+                    messages.Add(fieldIdentifier, validationResult.ErrorMessage);
+                }
+
+                editContext.NotifyValidationStateChanged();
             }
-
-            var validationResults = await validator.ValidateAsync(editContext.Model);
-
-            messages.Clear();
-            foreach (var validationResult in validationResults.Errors)
-            {
-                var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
-                messages.Add(fieldIdentifier, validationResult.ErrorMessage);
-            }
-
-            editContext.NotifyValidationStateChanged();
         }
 
-        private static async void ValidateField(EditContext editContext, ValidationMessageStore messages, FieldIdentifier fieldIdentifier, IServiceProvider serviceProvider, IValidator validator = null)
+        private static async void ValidateField(EditContext editContext,
+                                                ValidationMessageStore messages,
+                                                FieldIdentifier fieldIdentifier,
+                                                IServiceProvider serviceProvider,
+                                                bool disableAssemblyScanning,
+                                                IValidator validator = null)
         {
             var properties = new[] { fieldIdentifier.FieldName };
             var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
-            validator = validator ?? GetValidatorForModel(serviceProvider, fieldIdentifier.Model);
+            validator = validator ?? GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
 
-            if (validator != null)
+            if (validator is object)
             {
                 var validationResults = await validator.ValidateAsync(context);
 
@@ -72,7 +76,7 @@ namespace Blazored.FluentValidation
             }
         }
 
-        private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model)
+        private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
         {
             var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
             if (serviceProvider != null)
@@ -83,14 +87,19 @@ namespace Blazored.FluentValidation
                 }
             }
 
+            if (disableAssemblyScanning)
+            {
+                return null;
+            }
+
             var abstractValidatorType = typeof(AbstractValidator<>).MakeGenericType(model.GetType());
 
             Type modelValidatorType = null;
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                modelValidatorType = assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(abstractValidatorType));
+                modelValidatorType = IgnoreErrors<Type>(() => assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(abstractValidatorType)));
 
-                if (modelValidatorType != null)
+                if (modelValidatorType is object && modelValidatorType != default)
                 {
                     break;
                 }
@@ -157,6 +166,31 @@ namespace Blazored.FluentValidation
 
                 obj = newObj;
             }
+        }
+
+        /// <summary>
+        /// Runs an function that returns a value and ignores any Exceptions that occur.
+        /// Returns true or falls depending on whether catch was
+        /// triggered
+        /// </summary>
+        /// <param name="operation">parameterless lamda that returns a value of T</param>
+        /// <param name="defaultValue">Default value returned if operation fails</param>
+        public static T IgnoreErrors<T>(Func<T> operation, T defaultValue = default(T))
+        {
+            if (operation == null)
+                return defaultValue;
+
+            T result;
+            try
+            {
+                result = operation.Invoke();
+            }
+            catch
+            {
+                result = defaultValue;
+            }
+
+            return result;
         }
     }
 }

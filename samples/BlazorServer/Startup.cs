@@ -1,10 +1,12 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SharedModels;
 
-namespace ServerSideBlazor
+namespace BlazorServer
 {
     public class Startup
     {
@@ -20,7 +22,9 @@ namespace ServerSideBlazor
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-            services.AddServerSideBlazor(c=>c.DetailedErrors = true);
+            services.AddServerSideBlazor(c => c.DetailedErrors = true);
+
+            services.AddTransient<IValidator<Person>, PersonValidator>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

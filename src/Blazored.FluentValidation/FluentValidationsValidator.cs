@@ -12,6 +12,7 @@ namespace Blazored.FluentValidation
         [CascadingParameter] EditContext CurrentEditContext { get; set; }
 
         [Parameter] public IValidator Validator { get; set; }
+        [Parameter] public bool DisableAssemblyScanning { get; set; }
 
 
         protected override void OnInitialized()
@@ -23,7 +24,7 @@ namespace Blazored.FluentValidation
                     $"inside an {nameof(EditForm)}.");
             }
 
-            CurrentEditContext.AddFluentValidation(ServiceProvider, Validator);
+            CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator);
         }
     }
 }
