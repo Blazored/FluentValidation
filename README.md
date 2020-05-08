@@ -13,7 +13,7 @@ You can install from Nuget using the following command:
 
 Or via the Visual Studio package manger.
 
-## Usage
+## Basic Usage
 Start by add the following using statement to your root `_Imports.razor`.
 
 ```csharp
@@ -55,3 +55,16 @@ You can then use it as follows within a `EditForm` component.
     }
 }
 ```
+
+## Finding Validators
+By default, the component will check for validators registered with DI first. If it can't find, any it will then try scanning the applications assemblies to find validators using reflection.
+
+You can control this behaviour using the `DisableAssemblyScanning` parameter. If you only wish the component to get validators from DI, set the value to `true` and assembly scanning will be skipped.
+
+```html
+<FluentValidationValidator DisableAssemblyScanning="@true" />
+```
+
+You can find examples of different configurations in the sample projects. The Blazor Server project is configured to load validators from DI only. The Blazor WebAssembly project is setup to load validators using reflection.
+
+**Note:** When scanning assemblies the component will swallow any exceptions thrown by that process. This is to stop exceptions thrown by scanning third party dependencies crashing your app.
