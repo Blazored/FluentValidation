@@ -40,7 +40,9 @@ namespace Blazored.FluentValidation
 
             if (validator is object)
             {
-                var validationResults = await validator.ValidateAsync(editContext.Model);
+                var context = new ValidationContext<object>(editContext.Model);
+
+                var validationResults = await validator.ValidateAsync(context);
 
                 messages.Clear();
                 foreach (var validationResult in validationResults.Errors)
@@ -61,7 +63,7 @@ namespace Blazored.FluentValidation
                                                 IValidator validator = null)
         {
             var properties = new[] { fieldIdentifier.FieldName };
-            var context = new ValidationContext(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+            var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
             validator = validator ?? GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
 
