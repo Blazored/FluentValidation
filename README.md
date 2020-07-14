@@ -1,7 +1,7 @@
 # FluentValidation
 A library for using FluentValidation with Blazor
 
-[![Build Status](https://dev.azure.com/blazored/FluentValidation/_apis/build/status/Blazored.FluentValidation?branchName=master)](https://dev.azure.com/blazored/FluentValidation/_build/latest?definitionId=11&branchName=master)
+![Build & Test Main](https://github.com/Blazored/FluentValidation/workflows/Build%20&%20Test%20Main/badge.svg)
 
 ![Nuget](https://img.shields.io/nuget/v/blazored.fluentvalidation.svg)
 
