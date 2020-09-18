@@ -146,7 +146,7 @@ namespace Blazored.FluentValidation
                     nextToken = nextToken.Substring(0, nextToken.Length - 1);
                     var prop = obj.GetType().GetProperty("Item");
                                         
-                    if(null != prop)
+                    if (prop is object)
                     {
                         // we've got an Item property
                         var indexerType = prop.GetIndexParameters()[0].ParameterType;
@@ -157,10 +157,9 @@ namespace Blazored.FluentValidation
                     {
                         // If there is no Item property
                         // Try to cast the object to array
-                        object[] array = obj as object[];
-                        if (array != null)
+                        if (obj is object[] array)
                         {
-                            int indexerValue = Convert.ToInt32(nextToken);
+                            var indexerValue = Convert.ToInt32(nextToken);
                             newObj = array[indexerValue];
                         }
                         else
