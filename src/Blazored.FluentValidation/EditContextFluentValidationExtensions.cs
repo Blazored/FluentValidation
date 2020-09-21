@@ -3,14 +3,20 @@ using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using static FluentValidation.AssemblyScanner;
 
 namespace Blazored.FluentValidation
 {
     public static class EditContextFluentValidationExtensions
     {
         private readonly static char[] separators = new[] { '.', '[' };
+
+        private static List<string> scannedAssembly = new List<string>();
+
+        private static List<AssemblyScanResult> assemblyScanResults = new List<AssemblyScanResult>();
 
         public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator)
         {
@@ -94,18 +100,23 @@ namespace Blazored.FluentValidation
                 return null;
             }
 
-            var abstractValidatorType = typeof(AbstractValidator<>).MakeGenericType(model.GetType());
-
-            Type modelValidatorType = null;
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => !scannedAssembly.Contains(i.FullName)))
             {
-                modelValidatorType = IgnoreErrors<Type>(() => assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(abstractValidatorType)));
-
-                if (modelValidatorType is object && modelValidatorType != default)
+                try
                 {
-                    break;
+                    assemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
                 }
+                catch (Exception)
+                {
+                }
+
+                scannedAssembly.Add(assembly.FullName);
             }
+
+
+            var interfaceValidatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+
+            Type modelValidatorType = assemblyScanResults.FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
 
             if (modelValidatorType == null)
             {
