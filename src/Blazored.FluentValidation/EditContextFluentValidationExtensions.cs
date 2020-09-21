@@ -14,7 +14,9 @@ namespace Blazored.FluentValidation
     {
         private readonly static char[] separators = new[] { '.', '[' };
 
-        private static List<AssemblyScanResult> assemblyScanResults;
+        private static List<string> scannedAssembly = new List<string>();
+
+        private static List<AssemblyScanResult> assemblyScanResults = new List<AssemblyScanResult>();
 
         public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator)
         {
@@ -98,18 +100,19 @@ namespace Blazored.FluentValidation
                 return null;
             }
 
-            if (assemblyScanResults == null)
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => !scannedAssembly.Contains(i.FullName)))
             {
-                assemblyScanResults = new List<AssemblyScanResult>();
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                    try
-                    {
-                        assemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
-                    }
-                    catch (Exception)
-                    {
-                    }
+                try
+                {
+                    assemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
+                }
+                catch (Exception)
+                {
+                }
+
+                scannedAssembly.Add(assembly.FullName);
             }
+
 
             var interfaceValidatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
 
