@@ -28,9 +28,9 @@ namespace SharedModels
             RuleFor(p => p.EmailAddress).NotEmpty().WithMessage("You must enter a email address");
             RuleFor(p => p.EmailAddress).EmailAddress().WithMessage("You must provide a valid email address");
 
-            RuleFor(x => x.FirstName).MustAsync(async (name, cancellationToken) => await IsUniqueAsync(name))
-                                .WithMessage("Name must be unique")
-                                .When(person => !string.IsNullOrEmpty(person.FirstName));
+            RuleFor(x => x.EmailAddress).MustAsync(async (name, cancellationToken) => await IsUniqueAsync(name))
+                                .WithMessage("Email address must be unique")
+                                .When(person => !string.IsNullOrEmpty(person.EmailAddress));
 
             RuleFor(p => p.Address).SetValidator(new AddressValidator());
         }
