@@ -156,9 +156,28 @@ namespace Blazored.FluentValidation
                     // This code assumes C# conventions (one indexer named Item with one param)
                     nextToken = nextToken.Substring(0, nextToken.Length - 1);
                     var prop = obj.GetType().GetProperty("Item");
-                    var indexerType = prop.GetIndexParameters()[0].ParameterType;
-                    var indexerValue = Convert.ChangeType(nextToken, indexerType);
-                    newObj = prop.GetValue(obj, new object[] { indexerValue });
+                                        
+                    if (prop is object)
+                    {
+                        // we've got an Item property
+                        var indexerType = prop.GetIndexParameters()[0].ParameterType;
+                        var indexerValue = Convert.ChangeType(nextToken, indexerType);
+                        newObj = prop.GetValue(obj, new object[] { indexerValue });                        
+                    }
+                    else
+                    {
+                        // If there is no Item property
+                        // Try to cast the object to array
+                        if (obj is object[] array)
+                        {
+                            var indexerValue = Convert.ToInt32(nextToken);
+                            newObj = array[indexerValue];
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Could not find indexer on object of type {obj.GetType().FullName}.");
+                        }
+                    }
                 }
                 else
                 {
