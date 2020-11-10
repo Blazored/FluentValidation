@@ -5,7 +5,8 @@ namespace SharedModels
 {
     public class Person
     {
-        public string Name { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
         public int? Age { get; set; }
         public string EmailAddress { get; set; }
         public Address Address { get; set; } = new Address();
@@ -16,8 +17,10 @@ namespace SharedModels
         public PersonValidator()
         {
             RuleSet("Names", () => {
-                RuleFor(p => p.Name).NotEmpty().WithMessage("You must enter a name");
-                RuleFor(p => p.Name).MaximumLength(50).WithMessage("Name cannot be longer than 50 characters");
+                RuleFor(p => p.FirstName).NotEmpty().WithMessage("You must enter your first name");
+                RuleFor(p => p.FirstName).MaximumLength(50).WithMessage("First name cannot be longer than 50 characters");
+                RuleFor(p => p.LastName).NotEmpty().WithMessage("You must enter your last name");
+                RuleFor(p => p.LastName).MaximumLength(50).WithMessage("Last name cannot be longer than 50 characters");
             });
            
             RuleFor(p => p.Age).NotNull().GreaterThanOrEqualTo(0).WithMessage("Age must be greater than 0");
@@ -25,9 +28,9 @@ namespace SharedModels
             RuleFor(p => p.EmailAddress).NotEmpty().WithMessage("You must enter a email address");
             RuleFor(p => p.EmailAddress).EmailAddress().WithMessage("You must provide a valid email address");
 
-            RuleFor(x => x.Name).MustAsync(async (name, cancellationToken) => await IsUniqueAsync(name))
+            RuleFor(x => x.FirstName).MustAsync(async (name, cancellationToken) => await IsUniqueAsync(name))
                                 .WithMessage("Name must be unique")
-                                .When(person => !string.IsNullOrEmpty(person.Name));
+                                .When(person => !string.IsNullOrEmpty(person.FirstName));
 
             RuleFor(p => p.Address).SetValidator(new AddressValidator());
         }

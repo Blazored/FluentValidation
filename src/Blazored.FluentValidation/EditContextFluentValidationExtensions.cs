@@ -17,7 +17,7 @@ namespace Blazored.FluentValidation
 
         private static List<AssemblyScanResult> assemblyScanResults = new List<AssemblyScanResult>();
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator)
+        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator, FluentValidationValidator fluentValidationValidator)
         {
             if (editContext == null)
             {
@@ -27,7 +27,7 @@ namespace Blazored.FluentValidation
             var messages = new ValidationMessageStore(editContext);
 
             editContext.OnValidationRequested +=
-                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, disableAssemblyScanning, validator);
+                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
 
             editContext.OnFieldChanged +=
                 (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
@@ -39,16 +39,14 @@ namespace Blazored.FluentValidation
                                                 ValidationMessageStore messages,
                                                 IServiceProvider serviceProvider,
                                                 bool disableAssemblyScanning,
+                                                FluentValidationValidator fluentValidationValidator,
                                                 IValidator validator = null)
         {
-            validator = validator ?? GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+            validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
 
             if (validator is object)
             {
-                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, options =>
-                {
-                    options.IncludeAllRuleSets();
-                });
+                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.options ?? (opt => opt.IncludeAllRuleSets()));
 
                 var validationResults = await validator.ValidateAsync(context);
 
@@ -73,7 +71,7 @@ namespace Blazored.FluentValidation
             var properties = new[] { fieldIdentifier.FieldName };
             var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
-            validator = validator ?? GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+            validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
 
             if (validator is object)
             {
@@ -158,13 +156,13 @@ namespace Blazored.FluentValidation
                     // This code assumes C# conventions (one indexer named Item with one param)
                     nextToken = nextToken.Substring(0, nextToken.Length - 1);
                     var prop = obj.GetType().GetProperty("Item");
-                                        
+
                     if (prop is object)
                     {
                         // we've got an Item property
                         var indexerType = prop.GetIndexParameters()[0].ParameterType;
                         var indexerValue = Convert.ChangeType(nextToken, indexerType);
-                        newObj = prop.GetValue(obj, new object[] { indexerValue });                        
+                        newObj = prop.GetValue(obj, new object[] { indexerValue });
                     }
                     else
                     {
