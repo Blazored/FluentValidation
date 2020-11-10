@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using static FluentValidation.AssemblyScanner;
 
 namespace Blazored.FluentValidation
@@ -46,7 +45,10 @@ namespace Blazored.FluentValidation
 
             if (validator is object)
             {
-                var context = new ValidationContext<object>(editContext.Model);
+                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, options =>
+                {
+                    options.IncludeAllRuleSets();
+                });
 
                 var validationResults = await validator.ValidateAsync(context);
 
