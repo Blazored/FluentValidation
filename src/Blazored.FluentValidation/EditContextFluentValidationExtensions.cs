@@ -18,6 +18,7 @@ namespace Blazored.FluentValidation
         private static List<AssemblyScanResult> assemblyScanResults = new List<AssemblyScanResult>();
 
         public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator, FluentValidationValidator fluentValidationValidator)
+
         {
             if (editContext == null)
             {
