@@ -90,9 +90,15 @@ namespace Blazored.FluentValidation
             var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
             if (serviceProvider != null)
             {
-                if (serviceProvider.GetService(validatorType) is IValidator validator)
+                try
                 {
-                    return validator;
+                    if (serviceProvider.GetService(validatorType) is IValidator validator)
+                    {
+                        return validator;
+                    }
+                }
+                catch (Exception)
+                {
                 }
             }
 
