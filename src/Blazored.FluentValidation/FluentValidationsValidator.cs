@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using System;
@@ -14,6 +15,21 @@ namespace Blazored.FluentValidation
         [Parameter] public IValidator Validator { get; set; }
         [Parameter] public bool DisableAssemblyScanning { get; set; }
 
+        internal Action<ValidationStrategy<object>> options;
+
+        public bool Validate(Action<ValidationStrategy<object>> options)
+        {
+            this.options = options;
+
+            try
+            {
+                return CurrentEditContext.Validate();
+            }
+            finally
+            {
+                this.options = null;
+            }
+        }
 
         protected override void OnInitialized()
         {
@@ -24,7 +40,7 @@ namespace Blazored.FluentValidation
                     $"inside an {nameof(EditForm)}.");
             }
 
-            CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator);
+            CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
         }
     }
 }
