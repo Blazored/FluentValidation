@@ -16,29 +16,34 @@ namespace SharedModels
     {
         public PersonValidator()
         {
-            RuleSet("Names", () => {
-                RuleFor(p => p.FirstName).NotEmpty().WithMessage("You must enter your first name");
-                RuleFor(p => p.FirstName).MaximumLength(50).WithMessage("First name cannot be longer than 50 characters");
-                RuleFor(p => p.LastName).NotEmpty().WithMessage("You must enter your last name");
-                RuleFor(p => p.LastName).MaximumLength(50).WithMessage("Last name cannot be longer than 50 characters");
-            });
-           
-            RuleFor(p => p.Age).NotNull().GreaterThanOrEqualTo(0).WithMessage("Age must be greater than 0");
-            RuleFor(p => p.Age).LessThan(150).WithMessage("Age cannot be greater than 150");
-            RuleFor(p => p.EmailAddress).NotEmpty().WithMessage("You must enter a email address");
-            RuleFor(p => p.EmailAddress).EmailAddress().WithMessage("You must provide a valid email address");
+            RuleSet("Names", () =>
+            {
+                RuleFor(p => p.FirstName)
+                .NotEmpty().WithMessage("You must enter your first name")
+                .MaximumLength(50).WithMessage("First name cannot be longer than 50 characters");
 
-            RuleFor(x => x.EmailAddress).MustAsync(async (name, cancellationToken) => await IsUniqueAsync(name))
-                                .WithMessage("Email address must be unique")
-                                .When(person => !string.IsNullOrEmpty(person.EmailAddress));
+                RuleFor(p => p.LastName)
+                .NotEmpty().WithMessage("You must enter your last name")
+                .MaximumLength(50).WithMessage("Last name cannot be longer than 50 characters");
+            });
+
+            RuleFor(p => p.Age)
+                .NotNull().WithMessage("You must enter your age")
+                .GreaterThanOrEqualTo(0).WithMessage("Age must be greater than 0")
+                .LessThan(150).WithMessage("Age cannot be greater than 150");
+
+            RuleFor(p => p.EmailAddress)
+                .NotEmpty().WithMessage("You must enter a email address")
+                .EmailAddress().WithMessage("You must provide a valid email address")
+                .MustAsync(async (email, cancellationToken) => await IsUniqueAsync(email)).WithMessage("Email address must be unique").When(p => !string.IsNullOrEmpty(p.EmailAddress));
 
             RuleFor(p => p.Address).SetValidator(new AddressValidator());
         }
 
-        private async Task<bool> IsUniqueAsync(string name)
+        private async Task<bool> IsUniqueAsync(string email)
         {
             await Task.Delay(300);
-            return name.ToLower() != "test";
+            return email.ToLower() != "mail@my.com";
         }
     }
 }
