@@ -11,11 +11,9 @@ namespace Blazored.FluentValidation
 {
     public static class EditContextFluentValidationExtensions
     {
-        private readonly static char[] separators = new[] { '.', '[' };
-
-        private static List<string> scannedAssembly = new List<string>();
-
-        private static List<AssemblyScanResult> assemblyScanResults = new List<AssemblyScanResult>();
+        private static readonly char[] Separators = { '.', '[' };
+        private static readonly List<string> ScannedAssembly = new List<string>();
+        private static readonly List<AssemblyScanResult> AssemblyScanResults = new List<AssemblyScanResult>();
 
         public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator, FluentValidationValidator fluentValidationValidator)
 
@@ -47,7 +45,7 @@ namespace Blazored.FluentValidation
 
             if (validator is object)
             {
-                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.options ?? (opt => opt.IncludeAllRuleSets()));
+                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options ?? (opt => opt.IncludeAllRuleSets()));
 
                 var validationResults = await validator.ValidateAsync(context);
 
@@ -107,23 +105,23 @@ namespace Blazored.FluentValidation
                 return null;
             }
 
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => !scannedAssembly.Contains(i.FullName)))
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => !ScannedAssembly.Contains(i.FullName)))
             {
                 try
                 {
-                    assemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
+                    AssemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
                 }
                 catch (Exception)
                 {
                 }
 
-                scannedAssembly.Add(assembly.FullName);
+                ScannedAssembly.Add(assembly.FullName);
             }
 
 
             var interfaceValidatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
 
-            Type modelValidatorType = assemblyScanResults.FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
+            Type modelValidatorType = AssemblyScanResults.FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
 
             if (modelValidatorType == null)
             {
@@ -147,7 +145,7 @@ namespace Blazored.FluentValidation
 
             while (true)
             {
-                var nextTokenEnd = propertyPath.IndexOfAny(separators);
+                var nextTokenEnd = propertyPath.IndexOfAny(Separators);
                 if (nextTokenEnd < 0)
                 {
                     return new FieldIdentifier(obj, propertyPath);

@@ -8,18 +8,18 @@ namespace Blazored.FluentValidation
 {
     public class FluentValidationValidator : ComponentBase
     {
-        [Inject] IServiceProvider ServiceProvider { get; set; }
+        [Inject] private IServiceProvider ServiceProvider { get; set; }
 
-        [CascadingParameter] EditContext CurrentEditContext { get; set; }
+        [CascadingParameter] private EditContext CurrentEditContext { get; set; }
 
         [Parameter] public IValidator Validator { get; set; }
         [Parameter] public bool DisableAssemblyScanning { get; set; }
 
-        internal Action<ValidationStrategy<object>> options;
+        internal Action<ValidationStrategy<object>> Options;
 
         public bool Validate(Action<ValidationStrategy<object>> options)
         {
-            this.options = options;
+            Options = options;
 
             try
             {
@@ -27,7 +27,7 @@ namespace Blazored.FluentValidation
             }
             finally
             {
-                this.options = null;
+                Options = null;
             }
         }
 
