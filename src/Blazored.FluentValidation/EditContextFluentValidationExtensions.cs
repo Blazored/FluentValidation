@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using static FluentValidation.AssemblyScanner;
 
 namespace Blazored.FluentValidation
@@ -34,7 +35,7 @@ namespace Blazored.FluentValidation
             return editContext;
         }
 
-        private static async void ValidateModel(EditContext editContext,
+        private static void ValidateModel(EditContext editContext,
                                                 ValidationMessageStore messages,
                                                 IServiceProvider serviceProvider,
                                                 bool disableAssemblyScanning,
@@ -45,11 +46,14 @@ namespace Blazored.FluentValidation
 
             if (validator is object)
             {
-                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options ?? (opt => opt.IncludeAllRuleSets()));
+	            AddFakeIdentifier(editContext, messages);
 
-                var validationResults = await validator.ValidateAsync(context);
+	            var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options ?? (opt => opt.IncludeAllRuleSets()));
+
+	            var validationResults = Task.Run(() => validator.ValidateAsync(context)).Result;
 
                 messages.Clear();
+
                 foreach (var validationResult in validationResults.Errors)
                 {
                     var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
@@ -74,9 +78,12 @@ namespace Blazored.FluentValidation
 
             if (validator is object)
             {
+	            FieldIdentifier fakeIdentifier = AddFakeIdentifier(editContext, messages);
+
                 var validationResults = await validator.ValidateAsync(context);
 
                 messages.Clear(fieldIdentifier);
+                messages.Clear(fakeIdentifier);
                 messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
 
                 editContext.NotifyValidationStateChanged();
@@ -129,6 +136,15 @@ namespace Blazored.FluentValidation
             }
 
             return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
+        }
+
+        private static FieldIdentifier AddFakeIdentifier(EditContext editContext, ValidationMessageStore messages)
+        {
+	        var fake = new object();
+	        var fakeIdentifier = new FieldIdentifier(fake, nameof(fake));
+	        messages.Add(fakeIdentifier, "Validation is running");
+	        editContext.NotifyValidationStateChanged();
+	        return fakeIdentifier;
         }
 
         private static FieldIdentifier ToFieldIdentifier(EditContext editContext, string propertyPath)
