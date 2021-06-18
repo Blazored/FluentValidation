@@ -94,8 +94,8 @@ namespace Blazored.FluentValidation
 
         private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning, MakeTypeUsingEditContextModelDelegate modelTypeFunc)
         {
-	        var modelType = modelTypeFunc.Invoke(model.GetType());
-	        var validatorType = typeof(IValidator<>).MakeGenericType(modelType);
+            var modelType = modelTypeFunc.Invoke(model.GetType());
+            var validatorType = typeof(IValidator<>).MakeGenericType(modelType);
             if (serviceProvider != null)
             {
                 try

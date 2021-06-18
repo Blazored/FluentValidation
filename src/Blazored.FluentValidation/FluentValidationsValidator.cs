@@ -8,7 +8,7 @@ namespace Blazored.FluentValidation
 {
     public class FluentValidationValidator : ComponentBase
     {
-	    internal static readonly MakeTypeUsingEditContextModelDelegate ModelTypePassthrough = model => model.GetType();
+        internal static readonly MakeTypeUsingEditContextModelDelegate ModelTypePassthrough = model => model.GetType();
 
         [Inject] private IServiceProvider ServiceProvider { get; set; }
 
