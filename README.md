@@ -68,3 +68,27 @@ You can control this behaviour using the `DisableAssemblyScanning` parameter. If
 You can find examples of different configurations in the sample projects. The Blazor Server project is configured to load validators from DI only. The Blazor WebAssembly project is setup to load validators using reflection.
 
 **Note:** When scanning assemblies the component will swallow any exceptions thrown by that process. This is to stop exceptions thrown by scanning third party dependencies crashing your app.
+
+## Intercepting the Model Type Used to Find Validators
+By default, the component will use the type of the model being validated to determine what validator to resolve from the DI container.  In most scenarios, this will be the model's compile-time type; however, if your model is being proxied (by [Castle Project's `DynamicProxy`](http://www.castleproject.org/projects/dynamicproxy/), say), the component will fail to resolve validators from the DI container or from scanning assemblies because the runtime type differs from the compile-time type used to implement the validator.
+
+You can control this behaviour using the `ModelTypeFunc` parameter.
+```csharp
+// using System;
+// using Castle.DynamicProxy;
+
+public static class ModelTypeInterceptor
+{
+	public static Type Execute(object model)
+	{
+		if (model is IProxyTargetAccessor proxy)
+			return proxy.DynProxyGetTarget().GetType();
+
+		return model.GetType();
+	}
+}
+```
+
+```html
+<FluentValidationValidator ModelTypeFunc='@ModelTypeInterceptor.Execute' />
+```
