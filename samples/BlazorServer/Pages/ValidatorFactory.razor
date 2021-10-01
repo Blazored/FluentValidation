@@ -1,0 +1,78 @@
+﻿@page "/ValidatorFactory"
+@using FluentValidation
+<h1>Blazored FluentValidation Validator Factory Sample</h1>
+
+<hr class="mb-5" />
+
+<EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
+    <FluentValidationValidator @ref="fluentValidationValidator" ValidatorFactory="CreateValidator" />
+    <ValidationSummary />
+
+    <p>
+        <label>First Name: </label>
+        <InputText @bind-Value="@Person.FirstName" />
+        <ValidationMessage For="@(() => Person.FirstName)" />
+    </p>
+
+    <p>
+        <label>Last Name: </label>
+        <InputText @bind-Value="@Person.LastName" />
+        <ValidationMessage For="@(() => Person.LastName)" />
+    </p>
+
+    <hr />
+
+    <p>
+        <label>Address: Line 1: </label>
+        <InputText @bind-Value="@Person.Address.Line1" />
+        <ValidationMessage For="@(() => Person.Address.Line1)" />
+    </p>
+
+    <p>
+        <label>Address: Line 2: </label>
+        <InputText @bind-Value="@Person.Address.Line2" />
+    </p>
+
+    <p>
+        <label>Address: Town: </label>
+        <InputText @bind-Value="@Person.Address.Town" />
+        <ValidationMessage For="@(() => Person.Address.Town)" />
+    </p>
+
+    <p>
+        <label>Address: County: </label>
+        <InputText @bind-Value="@Person.Address.County" />
+        <ValidationMessage For="@(() => Person.Address.County)" />
+    </p>
+
+    <p>
+        <label>Address: Postcode: </label>
+        <InputText @bind-Value="@Person.Address.Postcode" />
+        <ValidationMessage For="@(() => Person.Address.Postcode)" />
+    </p>
+
+    <button type="submit">Save</button>
+
+</EditForm>
+<br />
+
+@code {
+    Person Person { get; set; } = new Person();
+
+    private FluentValidationValidator fluentValidationValidator;
+
+    void SubmitValidForm()
+    {
+        Console.WriteLine("Form Submitted Successfully!");
+    }
+
+    IValidator CreateValidator(ValidatorFactoryContext ctx)
+    {
+        if (ctx.Model == Person.Address)
+        {
+            return new AddressValidator();
+        }
+        return (IValidator)ctx.ServiceProvider.GetService(ctx.ValidatorType);
+    }
+
+}

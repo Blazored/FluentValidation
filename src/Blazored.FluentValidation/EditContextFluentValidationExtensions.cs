@@ -15,7 +15,7 @@ namespace Blazored.FluentValidation
         private static readonly List<string> ScannedAssembly = new List<string>();
         private static readonly List<AssemblyScanResult> AssemblyScanResults = new List<AssemblyScanResult>();
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator, FluentValidationValidator fluentValidationValidator)
+        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, FluentValidationValidator fluentValidationValidator)
 
         {
             if (editContext == null)
@@ -26,10 +26,10 @@ namespace Blazored.FluentValidation
             var messages = new ValidationMessageStore(editContext);
 
             editContext.OnValidationRequested +=
-                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, fluentValidationValidator);
 
             editContext.OnFieldChanged +=
-                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+                (sender, eventArgs) => ValidateField((EditContext)sender, messages, eventArgs.FieldIdentifier, serviceProvider, fluentValidationValidator);
 
             return editContext;
         }
@@ -37,11 +37,9 @@ namespace Blazored.FluentValidation
         private static async void ValidateModel(EditContext editContext,
                                                 ValidationMessageStore messages,
                                                 IServiceProvider serviceProvider,
-                                                bool disableAssemblyScanning,
-                                                FluentValidationValidator fluentValidationValidator,
-                                                IValidator validator = null)
+                                                FluentValidationValidator fluentValidationValidator)
         {
-            validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+            IValidator validator = GetValidator(serviceProvider, editContext, fluentValidationValidator);
 
             if (validator is object)
             {
@@ -64,13 +62,12 @@ namespace Blazored.FluentValidation
                                                 ValidationMessageStore messages,
                                                 FieldIdentifier fieldIdentifier,
                                                 IServiceProvider serviceProvider,
-                                                bool disableAssemblyScanning,
-                                                IValidator validator = null)
+                                                FluentValidationValidator fluentValidationValidator)
         {
             var properties = new[] { fieldIdentifier.FieldName };
             var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
-            validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+            IValidator validator = GetValidator(serviceProvider, editContext, fluentValidationValidator, fieldIdentifier);
 
             if (validator is object)
             {
@@ -83,9 +80,16 @@ namespace Blazored.FluentValidation
             }
         }
 
-        private static IValidator GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
+        private static IValidator GetValidator(IServiceProvider serviceProvider, EditContext editContext, FluentValidationValidator fluentValidationValidator, FieldIdentifier fieldIdentifier = default)
         {
-            var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+            object model = fieldIdentifier.Model ?? editContext.Model;
+            Type validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+            
+            if (fluentValidationValidator.ValidatorFactory != null)
+            {
+                var ctx = new ValidatorFactoryContext(validatorType, serviceProvider, editContext, model, fieldIdentifier);
+                return fluentValidationValidator.ValidatorFactory(ctx);
+            }
             if (serviceProvider != null)
             {
                 try
@@ -100,7 +104,7 @@ namespace Blazored.FluentValidation
                 }
             }
 
-            if (disableAssemblyScanning)
+            if (fluentValidationValidator.DisableAssemblyScanning)
             {
                 return null;
             }

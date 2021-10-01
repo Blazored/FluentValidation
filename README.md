@@ -61,8 +61,24 @@ By default, the component will check for validators registered with DI first. If
 
 You can control this behaviour using the `DisableAssemblyScanning` parameter. If you only wish the component to get validators from DI, set the value to `true` and assembly scanning will be skipped.
 
-```html
+```razor
 <FluentValidationValidator DisableAssemblyScanning="@true" />
+```
+
+You can customize the logic of finding validators using `ValidatorFactory` parameter
+
+```razor
+<FluentValidationValidator  ValidatorFactory="CreateValidator" />
+```
+```csharp
+    IValidator CreateValidator(ValidatorFactoryContext ctx)
+    {
+        if (ctx.Model == Person.Address)
+        {
+            return new AddressValidator();
+        }
+        return (IValidator)ctx.ServiceProvider.GetService(ctx.ValidatorType);
+    }
 ```
 
 You can find examples of different configurations in the sample projects. The Blazor Server project is configured to load validators from DI only. The Blazor WebAssembly project is setup to load validators using reflection.

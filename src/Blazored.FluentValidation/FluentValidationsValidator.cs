@@ -13,6 +13,7 @@ namespace Blazored.FluentValidation
         [CascadingParameter] private EditContext CurrentEditContext { get; set; }
 
         [Parameter] public IValidator Validator { get; set; }
+        [Parameter] public Func<ValidatorFactoryContext, IValidator> ValidatorFactory { get; set; }
         [Parameter] public bool DisableAssemblyScanning { get; set; }
 
         internal Action<ValidationStrategy<object>> Options;
@@ -40,7 +41,7 @@ namespace Blazored.FluentValidation
                     $"inside an {nameof(EditForm)}.");
             }
 
-            CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+            CurrentEditContext.AddFluentValidation(ServiceProvider, this);
         }
     }
 }
