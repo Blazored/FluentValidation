@@ -60,6 +60,30 @@ namespace Blazored.FluentValidation
             }
         }
 
+        private static string GetPropertyPath(object model, FieldIdentifier fieldIdentifier)
+        {
+            var props = model.GetType().GetProperties()
+                .Select(p => (Model: p.GetValue(model), p.Name));
+
+            var match = props.FirstOrDefault(p => p.Model == fieldIdentifier.Model);
+
+            if (match.Model != null)
+            {
+                return match.Name;
+            }
+
+            foreach (var p in props)
+            {
+                var path = GetPropertyPath(p.Model, fieldIdentifier);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return $"{p.Name}.{path}";
+                }
+            }
+
+            return string.Empty;
+        }
+        
         private static async void ValidateField(EditContext editContext,
                                                 ValidationMessageStore messages,
                                                 FieldIdentifier fieldIdentifier,
@@ -67,10 +91,20 @@ namespace Blazored.FluentValidation
                                                 bool disableAssemblyScanning,
                                                 IValidator validator = null)
         {
-            var properties = new[] { fieldIdentifier.FieldName };
-            var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+            var path = fieldIdentifier.FieldName;
+            if (editContext.Model != fieldIdentifier.Model)
+            {
+                var propertyPath = GetPropertyPath(editContext.Model, fieldIdentifier);
+                if (!string.IsNullOrEmpty(propertyPath))
+                {
+                    path = $"{propertyPath}.{fieldIdentifier.FieldName}";
+                }
+            }
 
-            validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+            var properties = new[] { path };
+            var context = new ValidationContext<object>(editContext.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+
+            validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
 
             if (validator is object)
             {
