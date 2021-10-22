@@ -68,9 +68,9 @@ namespace Blazored.FluentValidation
                                                 IValidator validator = null)
         {
             var properties = new[] { fieldIdentifier.FieldName };
-            var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+            var context = new ValidationContext<object>(editContext.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
 
-            validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+            validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
 
             if (validator is object)
             {
