@@ -144,7 +144,7 @@ namespace Blazored.FluentValidation
             var obj = editContext.Model;
             var nextTokenEnd = propertyPath.IndexOfAny(Separators);
             
-            // Optimize for a scenario when parsing wasn't needed.
+            // Optimize for a scenario when parsing isn't needed.
             if (nextTokenEnd < 0)
             {
                 return new FieldIdentifier(obj, propertyPath);
