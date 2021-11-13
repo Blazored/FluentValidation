@@ -131,7 +131,7 @@ namespace Blazored.FluentValidation
             return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
         }
 
-        private static FieldIdentifier ToFieldIdentifier(EditContext editContext, string propertyPath)
+        private static FieldIdentifier ToFieldIdentifier(in EditContext editContext, in string propertyPath)
         {
             // This code is taken from an article by Steve Sanderson (https://blog.stevensanderson.com/2019/09/04/blazor-fluentvalidation/)
             // all credit goes to him for this code.
@@ -142,31 +142,34 @@ namespace Blazored.FluentValidation
             // as far into the propertyPath as it can go until it finds any null instance.
 
             var obj = editContext.Model;
+            var nextTokenEnd = propertyPath.IndexOfAny(Separators);
+            
+            // Optimize for a scenario when parsing isn't needed.
+            if (nextTokenEnd < 0)
+            {
+                return new FieldIdentifier(obj, propertyPath);
+            }
+
+            ReadOnlySpan<char> propertyPathAsSpan = propertyPath;
 
             while (true)
             {
-                var nextTokenEnd = propertyPath.IndexOfAny(Separators);
-                if (nextTokenEnd < 0)
-                {
-                    return new FieldIdentifier(obj, propertyPath);
-                }
-
-                var nextToken = propertyPath.Substring(0, nextTokenEnd);
-                propertyPath = propertyPath.Substring(nextTokenEnd + 1);
+                var nextToken = propertyPathAsSpan.Slice(0, nextTokenEnd);
+                propertyPathAsSpan = propertyPathAsSpan.Slice(nextTokenEnd + 1);
 
                 object newObj;
                 if (nextToken.EndsWith("]"))
                 {
                     // It's an indexer
                     // This code assumes C# conventions (one indexer named Item with one param)
-                    nextToken = nextToken.Substring(0, nextToken.Length - 1);
+                    nextToken = nextToken.Slice(0, nextToken.Length - 1);
                     var prop = obj.GetType().GetProperty("Item");
 
                     if (prop is object)
                     {
                         // we've got an Item property
                         var indexerType = prop.GetIndexParameters()[0].ParameterType;
-                        var indexerValue = Convert.ChangeType(nextToken, indexerType);
+                        var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
                         newObj = prop.GetValue(obj, new object[] { indexerValue });
                     }
                     else
@@ -175,7 +178,7 @@ namespace Blazored.FluentValidation
                         // Try to cast the object to array
                         if (obj is object[] array)
                         {
-                            var indexerValue = Convert.ToInt32(nextToken);
+                            var indexerValue = int.Parse(nextToken);
                             newObj = array[indexerValue];
                         }
                         else
@@ -187,10 +190,10 @@ namespace Blazored.FluentValidation
                 else
                 {
                     // It's a regular property
-                    var prop = obj.GetType().GetProperty(nextToken);
+                    var prop = obj.GetType().GetProperty(nextToken.ToString());
                     if (prop == null)
                     {
-                        throw new InvalidOperationException($"Could not find property named {nextToken} on object of type {obj.GetType().FullName}.");
+                        throw new InvalidOperationException($"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
                     }
                     newObj = prop.GetValue(obj);
                 }
@@ -198,10 +201,16 @@ namespace Blazored.FluentValidation
                 if (newObj == null)
                 {
                     // This is as far as we can go
-                    return new FieldIdentifier(obj, nextToken);
+                    return new FieldIdentifier(obj, nextToken.ToString());
                 }
 
                 obj = newObj;
+                
+                nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
+                if (nextTokenEnd < 0)
+                {
+                    return new FieldIdentifier(obj, propertyPathAsSpan.ToString());
+                }
             }
         }
 
