@@ -6,7 +6,7 @@ on:
 
 env:
     PROJECT_NAME: Blazored.FluentValidation
-    NETCORE_VERSION: '3.1.301'
+    NETCORE_VERSION: '6.0.x'
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Setting up .NET Core SDK ${{ env.NETCORE_VERSION }}...
+    - name: Setting up .NET SDK ${{ env.NETCORE_VERSION }}...
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ env.NETCORE_VERSION }}
