@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.1</TargetFramework>
-		<RazorLangVersion>3.0</RazorLangVersion>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
 
 		<Authors>Chris Sainty</Authors>
 		<Company></Company>
@@ -26,14 +27,14 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 	</PropertyGroup>
 
+
 	<ItemGroup>
-		<PackageReference Include="FluentValidation" Version="[10.2.1,11.0)" />
-		<PackageReference Include="Microsoft.AspNetCore.Components" Version="3.1.14" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="3.1.14" />
+		<SupportedPlatform Include="browser" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="icon.png" Pack="true" PackagePath="\" />
+		<PackageReference Include="FluentValidation" Version="10.3.6" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.1" />
 	</ItemGroup>
 
 </Project>
