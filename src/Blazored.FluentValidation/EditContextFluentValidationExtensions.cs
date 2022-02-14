@@ -15,26 +15,23 @@ namespace Blazored.FluentValidation
         private static readonly List<string> ScannedAssembly = new List<string>();
         private static readonly List<AssemblyScanResult> AssemblyScanResults = new List<AssemblyScanResult>();
 
-        public static EditContext AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator, FluentValidationValidator fluentValidationValidator)
+        public static async Task<EditContext> AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator validator, FluentValidationValidator fluentValidationValidator)
 
         {
-            if (editContext == null)
-            {
-                throw new ArgumentNullException(nameof(editContext));
-            }
+            ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
 
             var messages = new ValidationMessageStore(editContext);
 
             editContext.OnValidationRequested +=
-                (sender, eventArgs) => ValidateModel((EditContext)sender, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+                async (sender, eventArgs) => await ValidateModel((EditContext)sender, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
 
             editContext.OnFieldChanged +=
-                (sender, eventArgs) => ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+               async (sender, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
 
-            return editContext;
+            return await Task.FromResult(editContext);
         }
 
-        private static async void ValidateModel(EditContext editContext,
+        private static async Task ValidateModel(EditContext editContext,
                                                 ValidationMessageStore messages,
                                                 IServiceProvider serviceProvider,
                                                 bool disableAssemblyScanning,
@@ -60,7 +57,7 @@ namespace Blazored.FluentValidation
             }
         }
 
-        private static async void ValidateField(EditContext editContext,
+        private static async Task ValidateField(EditContext editContext,
                                                 ValidationMessageStore messages,
                                                 FieldIdentifier fieldIdentifier,
                                                 IServiceProvider serviceProvider,

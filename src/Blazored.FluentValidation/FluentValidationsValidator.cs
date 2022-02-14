@@ -31,7 +31,7 @@ namespace Blazored.FluentValidation
             }
         }
 
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
             if (CurrentEditContext == null)
             {
@@ -40,7 +40,8 @@ namespace Blazored.FluentValidation
                     $"inside an {nameof(EditForm)}.");
             }
 
-            CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+            await CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+            await base.OnInitializedAsync();
         }
     }
 }
