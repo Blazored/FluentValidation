@@ -8,17 +8,22 @@ namespace Blazored.FluentValidation
 {
     public class FluentValidationValidator : ComponentBase
     {
-        [Inject] private IServiceProvider ServiceProvider { get; set; }
+        [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
 
-        [CascadingParameter] private EditContext CurrentEditContext { get; set; }
+        [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
 
-        [Parameter] public IValidator Validator { get; set; }
+        [Parameter] public IValidator? Validator { get; set; }
         [Parameter] public bool DisableAssemblyScanning { get; set; }
 
-        internal Action<ValidationStrategy<object>> Options;
+        internal Action<ValidationStrategy<object>>? Options;
 
         public bool Validate(Action<ValidationStrategy<object>> options)
         {
+            if (CurrentEditContext is null)
+            {
+                throw new NullReferenceException(nameof(CurrentEditContext));
+            }
+
             Options = options;
 
             try

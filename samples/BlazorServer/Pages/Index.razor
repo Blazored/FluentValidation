@@ -5,7 +5,7 @@
 <hr class="mb-5" />
 
 <EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
-    <FluentValidationValidator @ref="fluentValidationValidator" DisableAssemblyScanning="@true" />
+    <FluentValidationValidator @ref="_fluentValidationValidator" DisableAssemblyScanning="@true" />
     <ValidationSummary />
 
     <p>
@@ -70,9 +70,9 @@
 <button @onclick="PartialValidate">Partial Validation</button>
 
 @code {
-    Person Person { get; set; } = new Person();
+    Person Person { get; set; } = new();
 
-    private FluentValidationValidator fluentValidationValidator;
+    private FluentValidationValidator? _fluentValidationValidator;
 
     void SubmitValidForm()
     {
@@ -81,6 +81,6 @@
 
     void PartialValidate()
     {
-        Console.WriteLine($"Partial validation result : {fluentValidationValidator.Validate(options => options.IncludeRuleSets("Names"))}");
+        Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
     }
 }

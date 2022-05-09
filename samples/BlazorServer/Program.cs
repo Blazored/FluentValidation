@@ -11,6 +11,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor(c => c.DetailedErrors = true);
 
 builder.Services.AddTransient<IValidator<Person>, PersonValidator>();
+builder.Services.AddTransient<IValidator<Address>, AddressValidator>();
 
 var app = builder.Build();
 
