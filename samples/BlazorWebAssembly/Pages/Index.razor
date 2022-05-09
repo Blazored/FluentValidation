@@ -72,7 +72,7 @@
 @code {
     Person Person { get; set; } = new Person();
 
-    private FluentValidationValidator _fluentValidationValidator;
+    private FluentValidationValidator? _fluentValidationValidator;
 
     void SubmitValidForm()
     {
@@ -81,6 +81,6 @@
 
     void PartialValidate()
     {
-        Console.WriteLine($"Partial validation result : {_fluentValidationValidator.Validate(options => options.IncludeRuleSets("Names"))}");
+        Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
     }
 }
