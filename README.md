@@ -5,7 +5,7 @@ A library for using FluentValidation with Blazor
 
 ![Nuget](https://img.shields.io/nuget/v/blazored.fluentvalidation.svg)
 
-### Installing
+## Installing
 
 You can install from Nuget using the following command:
 
@@ -16,43 +16,40 @@ Or via the Visual Studio package manger.
 ## Basic Usage
 Start by add the following using statement to your root `_Imports.razor`.
 
-```csharp
+```razor
 @using Blazored.FluentValidation
 ```
 
 You can then use it as follows within a `EditForm` component.
 
-```html
-<EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
+```razor
+<EditForm Model="@_person" OnValidSubmit="@SubmitValidForm">
     <FluentValidationValidator />
     <ValidationSummary />
 
     <p>
         <label>Name: </label>
-        <InputText @bind-Value="@Person.Name" />
+        <InputText @bind-Value="@_person.Name" />
     </p>
 
     <p>
         <label>Age: </label>
-        <InputNumber @bind-Value="@Person.Age" />
+        <InputNumber @bind-Value="@_person.Age" />
     </p>
 
     <p>
         <label>Email Address: </label>
-        <InputText @bind-Value="@Person.EmailAddress" />
+        <InputText @bind-Value="@_person.EmailAddress" />
     </p>
 
     <button type="submit">Save</button>
-
 </EditForm>
 
 @code {
-    Person Person { get; set; } = new Person();
+    private Person _person = new();
 
-    void SubmitValidForm()
-    {
-        Console.WriteLine("Form Submitted Successfully!");
-    }
+    private void SubmitValidForm()
+        => Console.WriteLine("Form Submitted Successfully!");
 }
 ```
 
@@ -68,3 +65,44 @@ You can control this behaviour using the `DisableAssemblyScanning` parameter. If
 You can find examples of different configurations in the sample projects. The Blazor Server project is configured to load validators from DI only. The Blazor WebAssembly project is setup to load validators using reflection.
 
 **Note:** When scanning assemblies the component will swallow any exceptions thrown by that process. This is to stop exceptions thrown by scanning third party dependencies crashing your app.
+
+## Async Validation
+If you're using async validation, you can use the `ValidateAsync` method on the `FluentValidationValidator`.
+
+```razor
+<EditForm Model="@_person" OnSubmit="@SubmitFormAsync">
+    <FluentValidationValidator @ref="_fluentValidationValidator" />
+    <ValidationSummary />
+
+    <p>
+        <label>Name: </label>
+        <InputText @bind-Value="@_person.Name" />
+    </p>
+
+    <p>
+        <label>Age: </label>
+        <InputNumber @bind-Value="@_person.Age" />
+    </p>
+
+    <p>
+        <label>Email Address: </label>
+        <InputText @bind-Value="@_person.EmailAddress" />
+    </p>
+
+    <button type="submit">Save</button>
+
+</EditForm>
+
+@code {
+    private Person _person = new();
+	private FluentValidationValidator? _fluentValidationValidator;
+
+    private void SubmitFormAsync()
+    {
+		if (await _fluentValidationValidator!.ValidateAsync())
+        {
+            Console.WriteLine("Form Submitted Successfully!");
+        }
+    }
+}
+```

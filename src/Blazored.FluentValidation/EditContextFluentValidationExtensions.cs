@@ -4,206 +4,205 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using static FluentValidation.AssemblyScanner;
 
-namespace Blazored.FluentValidation
+namespace Blazored.FluentValidation;
+
+public static class EditContextFluentValidationExtensions
 {
-    public static class EditContextFluentValidationExtensions
+    private static readonly char[] Separators = { '.', '[' };
+    private static readonly List<string> ScannedAssembly = new();
+    private static readonly List<AssemblyScanResult> AssemblyScanResults = new();
+    public const string PendingAsyncValidation = "AsyncValidationTask";
+
+    public static void AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
     {
-        private static readonly char[] Separators = { '.', '[' };
-        private static readonly List<string> ScannedAssembly = new();
-        private static readonly List<AssemblyScanResult> AssemblyScanResults = new();
+        ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
 
-        public static async Task<EditContext> AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
+        var messages = new ValidationMessageStore(editContext);
 
+        editContext.OnValidationRequested +=
+            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+
+        editContext.OnFieldChanged +=
+            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+    }
+
+    private static async Task ValidateModel(EditContext editContext,
+        ValidationMessageStore messages,
+        IServiceProvider serviceProvider,
+        bool disableAssemblyScanning,
+        FluentValidationValidator fluentValidationValidator,
+        IValidator? validator = null)
+    {
+        validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+
+        if (validator is not null)
         {
-            ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
-
-            var messages = new ValidationMessageStore(editContext);
-
-            editContext.OnValidationRequested +=
-                async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
-
-            editContext.OnFieldChanged +=
-               async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
-
-            return await Task.FromResult(editContext);
-        }
-
-        private static async Task ValidateModel(EditContext editContext,
-                                                ValidationMessageStore messages,
-                                                IServiceProvider serviceProvider,
-                                                bool disableAssemblyScanning,
-                                                FluentValidationValidator fluentValidationValidator,
-                                                IValidator? validator = null)
-        {
-            validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
-
-            if (validator is not null)
-            {
-                var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options ?? (opt => opt.IncludeAllRuleSets()));
-
-                var validationResults = await validator.ValidateAsync(context);
-
-                messages.Clear();
-                foreach (var validationResult in validationResults.Errors)
-                {
-                    var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
-                    messages.Add(fieldIdentifier, validationResult.ErrorMessage);
-                }
-
-                editContext.NotifyValidationStateChanged();
-            }
-        }
-
-        private static async Task ValidateField(EditContext editContext,
-                                                ValidationMessageStore messages,
-                                                FieldIdentifier fieldIdentifier,
-                                                IServiceProvider serviceProvider,
-                                                bool disableAssemblyScanning,
-                                                IValidator? validator = null)
-        {
-            var properties = new[] { fieldIdentifier.FieldName };
-            var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+            var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options ?? (opt => opt.IncludeAllRuleSets()));
+            var asyncValidationTask = validator.ValidateAsync(context);
             
-            validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+            editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
+            var validationResults = await asyncValidationTask;
 
-            if (validator is not null)
+            messages.Clear();
+            foreach (var validationResult in validationResults.Errors)
             {
-                var validationResults = await validator.ValidateAsync(context);
+                var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
+                messages.Add(fieldIdentifier, validationResult.ErrorMessage);
+            }
 
-                messages.Clear(fieldIdentifier);
-                messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+            editContext.NotifyValidationStateChanged();
+        }
+    }
 
-                editContext.NotifyValidationStateChanged();
+    private static async Task ValidateField(EditContext editContext,
+        ValidationMessageStore messages,
+        FieldIdentifier fieldIdentifier,
+        IServiceProvider serviceProvider,
+        bool disableAssemblyScanning,
+        IValidator? validator = null)
+    {
+        var properties = new[] { fieldIdentifier.FieldName };
+        var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+            
+        validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+
+        if (validator is not null)
+        {
+            var validationResults = await validator.ValidateAsync(context);
+
+            messages.Clear(fieldIdentifier);
+            messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+
+            editContext.NotifyValidationStateChanged();
+        }
+    }
+
+    private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
+    {
+        var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+        try
+        {
+            if (serviceProvider.GetService(validatorType) is IValidator validator)
+            {
+                return validator;
             }
         }
-
-        private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
+        catch (Exception)
         {
-            var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+            // ignored
+        }
+
+        if (disableAssemblyScanning)
+        {
+            return null;
+        }
+
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => i.FullName is not null && !ScannedAssembly.Contains(i.FullName)))
+        {
             try
             {
-                if (serviceProvider.GetService(validatorType) is IValidator validator)
-                {
-                    return validator;
-                }
+                AssemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
             }
             catch (Exception)
             {
                 // ignored
             }
 
-            if (disableAssemblyScanning)
-            {
-                return null;
-            }
-
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => i.FullName is not null && !ScannedAssembly.Contains(i.FullName)))
-            {
-                try
-                {
-                    AssemblyScanResults.AddRange(FindValidatorsInAssembly(assembly));
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-
-                ScannedAssembly.Add(assembly.FullName!);
-            }
-
-
-            var interfaceValidatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
-            var modelValidatorType = AssemblyScanResults.FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
-
-            if (modelValidatorType is null)
-            {
-                return null;
-            }
-
-            return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
+            ScannedAssembly.Add(assembly.FullName!);
         }
 
-        private static FieldIdentifier ToFieldIdentifier(in EditContext editContext, in string propertyPath)
+
+        var interfaceValidatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
+        var modelValidatorType = AssemblyScanResults.FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
+
+        if (modelValidatorType is null)
         {
-            // This code is taken from an article by Steve Sanderson (https://blog.stevensanderson.com/2019/09/04/blazor-fluentvalidation/)
-            // all credit goes to him for this code.
+            return null;
+        }
 
-            // This method parses property paths like 'SomeProp.MyCollection[123].ChildProp'
-            // and returns a FieldIdentifier which is an (instance, propName) pair. For example,
-            // it would return the pair (SomeProp.MyCollection[123], "ChildProp"). It traverses
-            // as far into the propertyPath as it can go until it finds any null instance.
+        return (IValidator)ActivatorUtilities.CreateInstance(serviceProvider, modelValidatorType);
+    }
 
-            var obj = editContext.Model;
-            var nextTokenEnd = propertyPath.IndexOfAny(Separators);
+    private static FieldIdentifier ToFieldIdentifier(in EditContext editContext, in string propertyPath)
+    {
+        // This code is taken from an article by Steve Sanderson (https://blog.stevensanderson.com/2019/09/04/blazor-fluentvalidation/)
+        // all credit goes to him for this code.
+
+        // This method parses property paths like 'SomeProp.MyCollection[123].ChildProp'
+        // and returns a FieldIdentifier which is an (instance, propName) pair. For example,
+        // it would return the pair (SomeProp.MyCollection[123], "ChildProp"). It traverses
+        // as far into the propertyPath as it can go until it finds any null instance.
+
+        var obj = editContext.Model;
+        var nextTokenEnd = propertyPath.IndexOfAny(Separators);
             
-            // Optimize for a scenario when parsing isn't needed.
-            if (nextTokenEnd < 0)
+        // Optimize for a scenario when parsing isn't needed.
+        if (nextTokenEnd < 0)
+        {
+            return new FieldIdentifier(obj, propertyPath);
+        }
+
+        ReadOnlySpan<char> propertyPathAsSpan = propertyPath;
+
+        while (true)
+        {
+            var nextToken = propertyPathAsSpan.Slice(0, nextTokenEnd);
+            propertyPathAsSpan = propertyPathAsSpan.Slice(nextTokenEnd + 1);
+
+            object? newObj;
+            if (nextToken.EndsWith("]"))
             {
-                return new FieldIdentifier(obj, propertyPath);
-            }
+                // It's an indexer
+                // This code assumes C# conventions (one indexer named Item with one param)
+                nextToken = nextToken.Slice(0, nextToken.Length - 1);
+                var prop = obj.GetType().GetProperty("Item");
 
-            ReadOnlySpan<char> propertyPathAsSpan = propertyPath;
-
-            while (true)
-            {
-                var nextToken = propertyPathAsSpan.Slice(0, nextTokenEnd);
-                propertyPathAsSpan = propertyPathAsSpan.Slice(nextTokenEnd + 1);
-
-                object? newObj;
-                if (nextToken.EndsWith("]"))
+                if (prop is not null)
                 {
-                    // It's an indexer
-                    // This code assumes C# conventions (one indexer named Item with one param)
-                    nextToken = nextToken.Slice(0, nextToken.Length - 1);
-                    var prop = obj.GetType().GetProperty("Item");
-
-                    if (prop is not null)
-                    {
-                        // we've got an Item property
-                        var indexerType = prop.GetIndexParameters()[0].ParameterType;
-                        var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
+                    // we've got an Item property
+                    var indexerType = prop.GetIndexParameters()[0].ParameterType;
+                    var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
                         
-                        newObj = prop.GetValue(obj, new [] { indexerValue });
-                    }
-                    else
-                    {
-                        // If there is no Item property
-                        // Try to cast the object to array
-                        if (obj is object[] array)
-                        {
-                            var indexerValue = int.Parse(nextToken);
-                            newObj = array[indexerValue];
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException($"Could not find indexer on object of type {obj.GetType().FullName}.");
-                        }
-                    }
+                    newObj = prop.GetValue(obj, new [] { indexerValue });
                 }
                 else
                 {
-                    // It's a regular property
-                    var prop = obj.GetType().GetProperty(nextToken.ToString());
-                    if (prop == null)
+                    // If there is no Item property
+                    // Try to cast the object to array
+                    if (obj is object[] array)
                     {
-                        throw new InvalidOperationException($"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
+                        var indexerValue = int.Parse(nextToken);
+                        newObj = array[indexerValue];
                     }
-                    newObj = prop.GetValue(obj);
+                    else
+                    {
+                        throw new InvalidOperationException($"Could not find indexer on object of type {obj.GetType().FullName}.");
+                    }
                 }
-
-                if (newObj == null)
+            }
+            else
+            {
+                // It's a regular property
+                var prop = obj.GetType().GetProperty(nextToken.ToString());
+                if (prop == null)
                 {
-                    // This is as far as we can go
-                    return new FieldIdentifier(obj, nextToken.ToString());
+                    throw new InvalidOperationException($"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
                 }
+                newObj = prop.GetValue(obj);
+            }
 
-                obj = newObj;
+            if (newObj == null)
+            {
+                // This is as far as we can go
+                return new FieldIdentifier(obj, nextToken.ToString());
+            }
+
+            obj = newObj;
                 
-                nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
-                if (nextTokenEnd < 0)
-                {
-                    return new FieldIdentifier(obj, propertyPathAsSpan.ToString());
-                }
+            nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
+            if (nextTokenEnd < 0)
+            {
+                return new FieldIdentifier(obj, propertyPathAsSpan.ToString());
             }
         }
     }
