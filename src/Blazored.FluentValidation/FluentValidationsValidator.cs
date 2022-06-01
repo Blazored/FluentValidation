@@ -15,17 +15,17 @@ public class FluentValidationValidator : ComponentBase
 
     [Parameter] public IValidator? Validator { get; set; }
     [Parameter] public bool DisableAssemblyScanning { get; set; }
+    [Parameter] public Action<ValidationStrategy<object>>? Options { get; set; }
+    internal Action<ValidationStrategy<object>>? ValidateOptions { get; set; }
 
-    internal Action<ValidationStrategy<object>>? Options;
-
-    public bool Validate(Action<ValidationStrategy<object>> options)
+    public bool Validate(Action<ValidationStrategy<object>>? options = null)
     {
         if (CurrentEditContext is null)
         {
             throw new NullReferenceException(nameof(CurrentEditContext));
         }
 
-        Options = options;
+        ValidateOptions = options;
 
         try
         {
@@ -33,7 +33,7 @@ public class FluentValidationValidator : ComponentBase
         }
         finally
         {
-            Options = null;
+            ValidateOptions = null;
         }
     }
 
@@ -41,23 +41,33 @@ public class FluentValidationValidator : ComponentBase
     /// Validates this <see cref="EditContext"/>.
     /// </summary>
     /// <returns>True if there are no validation messages after validation; otherwise false.</returns>
-    public async Task<bool> ValidateAsync()
+    public async Task<bool> ValidateAsync(Action<ValidationStrategy<object>>? options = null)
     {
         if (CurrentEditContext is null)
         {
             throw new NullReferenceException(nameof(CurrentEditContext));
         }
         
-        CurrentEditContext.Validate();
+        ValidateOptions = options;
 
-        if (!CurrentEditContext!.Properties.TryGetValue(EditContextFluentValidationExtensions.PendingAsyncValidation, out var asyncValidationTask))
+        try
         {
-            throw new InvalidOperationException("No pending ValidationResult found");
-        }
+            CurrentEditContext.Validate();
 
-        await (Task<ValidationResult>)asyncValidationTask;
-        
-        return !CurrentEditContext.GetValidationMessages().Any();
+            if (!CurrentEditContext!.Properties.TryGetValue(
+                    EditContextFluentValidationExtensions.PendingAsyncValidation, out var asyncValidationTask))
+            {
+                throw new InvalidOperationException("No pending ValidationResult found");
+            }
+
+            await (Task<ValidationResult>) asyncValidationTask;
+
+            return !CurrentEditContext.GetValidationMessages().Any();
+        }
+        finally
+        {
+            ValidateOptions = null;
+        }
     }
 
     protected override void OnInitialized()

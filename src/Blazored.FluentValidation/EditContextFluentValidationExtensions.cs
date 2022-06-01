@@ -37,9 +37,22 @@ public static class EditContextFluentValidationExtensions
 
         if (validator is not null)
         {
-            var context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options ?? (opt => opt.IncludeAllRuleSets()));
+            ValidationContext<object> context;
+
+            if (fluentValidationValidator.ValidateOptions is not null)
+            {
+                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
+            }
+            else if (fluentValidationValidator.Options is not null)
+            {
+                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
+            }
+            else
+            {
+                context = new ValidationContext<object>(editContext.Model);
+            }
+
             var asyncValidationTask = validator.ValidateAsync(context);
-            
             editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
             var validationResults = await asyncValidationTask;
 

@@ -106,3 +106,25 @@ If you're using async validation, you can use the `ValidateAsync` method on the 
     }
 }
 ```
+
+## RuleSets
+[RuleSets](https://docs.fluentvalidation.net/en/latest/rulesets.html) allow validation rules to be grouped and executed together while ignoring other rules. RulesSets are supported in two ways.
+
+The first is setting RuleSets via the `Options` parameter on the `FluentValidationValidator` component.
+
+```razor
+<FluentValidationValidator Options="@(options => options.IncludeRuleSets("Names"))" />
+```
+
+The second is when manually validating the model using the `Validate` or `ValidateAsync` methods. 
+
+```razor
+<FluentValidationValidator @ref="_fluentValidationValidator" />
+
+@code {
+    private FluentValidationValidator? _fluentValidationValidator;
+
+    private void PartialValidate()
+        => _fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"));
+}
+```

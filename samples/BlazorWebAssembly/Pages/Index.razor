@@ -5,7 +5,7 @@
 <hr class="mb-5" />
 
 <EditForm Model="@_person" OnSubmit="@SubmitFormAsync">
-    <FluentValidationValidator @ref="_fluentValidationValidator" />
+    <FluentValidationValidator @ref="_fluentValidationValidator" Options="@(options => options.IncludeAllRuleSets())" />
     <ValidationSummary />
 
     <p>
