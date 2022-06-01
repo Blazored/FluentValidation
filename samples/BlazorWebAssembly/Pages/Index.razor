@@ -71,25 +71,16 @@
 
 @code {
     private readonly Person _person = new();
-
     private FluentValidationValidator? _fluentValidationValidator;
 
-    async Task SubmitFormAsync()
+    private async Task SubmitFormAsync()
     {
         if (await _fluentValidationValidator!.ValidateAsync())
         {
             Console.WriteLine("Form Submitted Successfully!");
         }
     }
-    
-    void SubmitValidForm()
-    {
-        
-        Console.WriteLine("Form Submitted Successfully!");
-    }
 
-    void PartialValidate()
-    {
-        Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
-    }
+    private void PartialValidate()
+        => Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
 }
