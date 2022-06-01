@@ -32,17 +32,17 @@ namespace SharedModels
                 .LessThan(150).WithMessage("Age cannot be greater than 150");
 
             RuleFor(p => p.EmailAddress)
-                .NotEmpty().WithMessage("You must enter a email address")
+                .NotEmpty().WithMessage("You must enter an email address")
                 .EmailAddress().WithMessage("You must provide a valid email address")
-                .MustAsync(async (email, _) => await IsUniqueAsync(email)).WithMessage("Email address must be unique").When(p => !string.IsNullOrEmpty(p.EmailAddress));
+                .MustAsync(async (email, _) => await IsUniqueAsync(email)).WithMessage("Email address must be unique");
 
             RuleFor(p => p.Address).SetValidator(new AddressValidator());
         }
 
-        private static async Task<bool> IsUniqueAsync(string email)
+        private static async Task<bool> IsUniqueAsync(string? email)
         {
             await Task.Delay(300);
-            return email.ToLower() != "mail@my.com";
+            return email?.ToLower() != "mail@my.com";
         }
     }
 }
