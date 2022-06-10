@@ -4,63 +4,63 @@
 
 <hr class="mb-5" />
 
-<EditForm Model="@Person" OnValidSubmit="@SubmitValidForm">
-    <FluentValidationValidator @ref="fluentValidationValidator" DisableAssemblyScanning="@true" />
+<EditForm Model="@_person" OnValidSubmit="@SubmitValidForm">
+    <FluentValidationValidator @ref="_fluentValidationValidator" DisableAssemblyScanning="@true" />
     <ValidationSummary />
 
     <p>
         <label>First Name: </label>
-        <InputText @bind-Value="@Person.FirstName" />
-        <ValidationMessage For="@(() => Person.FirstName)" />
+        <InputText @bind-Value="@_person.FirstName" />
+        <ValidationMessage For="@(() => _person.FirstName)" />
     </p>
 
     <p>
         <label>Last Name: </label>
-        <InputText @bind-Value="@Person.LastName" />
-        <ValidationMessage For="@(() => Person.LastName)" />
+        <InputText @bind-Value="@_person.LastName" />
+        <ValidationMessage For="@(() => _person.LastName)" />
     </p>
 
     <hr />
 
     <p>
         <label>Age: </label>
-        <InputNumber @bind-Value="@Person.Age" />
-        <ValidationMessage For="@(() => Person.Age)" />
+        <InputNumber @bind-Value="@_person.Age" />
+        <ValidationMessage For="@(() => _person.Age)" />
     </p>
 
     <p>
         <label>Email Address: </label>
-        <InputText @bind-Value="@Person.EmailAddress" />
-        <ValidationMessage For="@(() => Person.EmailAddress)" />
+        <InputText @bind-Value="@_person.EmailAddress" />
+        <ValidationMessage For="@(() => _person.EmailAddress)" />
     </p>
 
     <p>
         <label>Address: Line 1: </label>
-        <InputText @bind-Value="@Person.Address.Line1" />
-        <ValidationMessage For="@(() => Person.Address.Line1)" />
+        <InputText @bind-Value="@_person.Address.Line1" />
+        <ValidationMessage For="@(() => _person.Address.Line1)" />
     </p>
 
     <p>
         <label>Address: Line 2: </label>
-        <InputText @bind-Value="@Person.Address.Line2" />
+        <InputText @bind-Value="@_person.Address.Line2" />
     </p>
 
     <p>
         <label>Address: Town: </label>
-        <InputText @bind-Value="@Person.Address.Town" />
-        <ValidationMessage For="@(() => Person.Address.Town)" />
+        <InputText @bind-Value="@_person.Address.Town" />
+        <ValidationMessage For="@(() => _person.Address.Town)" />
     </p>
 
     <p>
         <label>Address: County: </label>
-        <InputText @bind-Value="@Person.Address.County" />
-        <ValidationMessage For="@(() => Person.Address.County)" />
+        <InputText @bind-Value="@_person.Address.County" />
+        <ValidationMessage For="@(() => _person.Address.County)" />
     </p>
 
     <p>
         <label>Address: Postcode: </label>
-        <InputText @bind-Value="@Person.Address.Postcode" />
-        <ValidationMessage For="@(() => Person.Address.Postcode)" />
+        <InputText @bind-Value="@_person.Address.Postcode" />
+        <ValidationMessage For="@(() => _person.Address.Postcode)" />
     </p>
 
     <button type="submit">Save</button>
@@ -70,17 +70,12 @@
 <button @onclick="PartialValidate">Partial Validation</button>
 
 @code {
-    Person Person { get; set; } = new Person();
+    private readonly Person _person = new();
+    private FluentValidationValidator? _fluentValidationValidator;
 
-    private FluentValidationValidator fluentValidationValidator;
+    private void SubmitValidForm() 
+        => Console.WriteLine("Form Submitted Successfully!");
 
-    void SubmitValidForm()
-    {
-        Console.WriteLine("Form Submitted Successfully!");
-    }
-
-    void PartialValidate()
-    {
-        Console.WriteLine($"Partial validation result : {fluentValidationValidator.Validate(options => options.IncludeRuleSets("Names"))}");
-    }
+    private void PartialValidate() 
+        => Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
 }
