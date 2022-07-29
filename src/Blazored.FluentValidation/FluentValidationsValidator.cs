@@ -7,7 +7,7 @@ using FluentValidation.Results;
 
 namespace Blazored.FluentValidation;
 
-public class FluentValidationValidator : ComponentBase
+public class FluentValidationValidator : ComponentBase, IDisposable
 {
     [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
 
@@ -80,5 +80,26 @@ public class FluentValidationValidator : ComponentBase
         }
 
         CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+    }
+
+    private bool _disposedValue;
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
+        {
+            if (disposing)
+            {
+                CurrentEditContext?.RemoveFluentValidation();
+            }
+
+            _disposedValue = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
