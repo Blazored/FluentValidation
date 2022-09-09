@@ -23,7 +23,7 @@ public static class EditContextFluentValidationExtensions
             async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
 
         editContext.OnFieldChanged +=
-            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
     }
 
     private static async Task ValidateModel(EditContext editContext,
@@ -52,6 +52,8 @@ public static class EditContextFluentValidationExtensions
                 context = new ValidationContext<object>(editContext.Model);
             }
 
+            FillRootContextData(context, fluentValidationValidator.ContextData);
+
             var asyncValidationTask = validator.ValidateAsync(context);
             editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
             var validationResults = await asyncValidationTask;
@@ -72,11 +74,14 @@ public static class EditContextFluentValidationExtensions
         FieldIdentifier fieldIdentifier,
         IServiceProvider serviceProvider,
         bool disableAssemblyScanning,
+        FluentValidationValidator fluentValidationValidator,
         IValidator? validator = null)
     {
         var properties = new[] { fieldIdentifier.FieldName };
         var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
-            
+
+        FillRootContextData(context, fluentValidationValidator.ContextData);
+
         validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
 
         if (validator is not null)
@@ -216,6 +221,17 @@ public static class EditContextFluentValidationExtensions
             if (nextTokenEnd < 0)
             {
                 return new FieldIdentifier(obj, propertyPathAsSpan.ToString());
+            }
+        }
+    }
+
+    private static void FillRootContextData(ValidationContext<object> context, IDictionary<string, object>? data)
+    {
+        if (data is not null)
+        {
+            foreach (var item in data)
+            {
+                context.RootContextData[item.Key] = item.Value;
             }
         }
     }
