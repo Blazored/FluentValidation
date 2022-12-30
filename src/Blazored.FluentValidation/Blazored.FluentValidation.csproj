@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 
@@ -27,14 +27,18 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 	</PropertyGroup>
 
-
 	<ItemGroup>
 		<SupportedPlatform Include="browser" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="FluentValidation" Version="11.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.7" />
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+		<PackageReference Include="FluentValidation" Version="11.4.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.12" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+		<PackageReference Include="FluentValidation" Version="11.4.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
