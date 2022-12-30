@@ -8,6 +8,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8BA5A2FD-3AC9-4D43-A173-E2FA2E0869C7}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		.github\workflows\ci-main.yml = .github\workflows\ci-main.yml
+		.github\workflows\ci-pr.yml = .github\workflows\ci-pr.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazored.FluentValidation", "src\Blazored.FluentValidation\Blazored.FluentValidation.csproj", "{D63C69C1-D03D-4CDE-9B2D-F9725C016D82}"
