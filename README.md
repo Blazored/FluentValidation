@@ -66,6 +66,8 @@ You can find examples of different configurations in the sample projects. The Bl
 
 **Note:** When scanning assemblies the component will swallow any exceptions thrown by that process. This is to stop exceptions thrown by scanning third party dependencies crashing your app.
 
+The validator must be publicly accessible and inherit directly from `AbstractValidator<T>`.
+
 ## Async Validation
 If you're using async validation, you can use the `ValidateAsync` method on the `FluentValidationValidator`.
 
