@@ -14,6 +14,7 @@ public class FluentValidationValidator : ComponentBase
     [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
 
     [Parameter] public IValidator? Validator { get; set; }
+    [Parameter] public IValidator[]? Validators { get; set; }
     [Parameter] public bool DisableAssemblyScanning { get; set; }
     [Parameter] public Action<ValidationStrategy<object>>? Options { get; set; }
     internal Action<ValidationStrategy<object>>? ValidateOptions { get; set; }
@@ -77,6 +78,12 @@ public class FluentValidationValidator : ComponentBase
             throw new InvalidOperationException($"{nameof(FluentValidationValidator)} requires a cascading " +
                                                 $"parameter of type {nameof(EditContext)}. For example, you can use {nameof(FluentValidationValidator)} " +
                                                 $"inside an {nameof(EditForm)}.");
+        }
+
+        if (Validators?.Any() == true)
+        {
+            foreach (var validator in Validators)
+                CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, validator, this);
         }
 
         CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
