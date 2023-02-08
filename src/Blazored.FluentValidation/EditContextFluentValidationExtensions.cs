@@ -33,7 +33,10 @@ public static class EditContextFluentValidationExtensions
         FluentValidationValidator fluentValidationValidator,
         IValidator? validator = null)
     {
-        validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+        if (validator == null)
+        {
+            validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+        }
 
         if (validator is not null)
         {
@@ -77,7 +80,10 @@ public static class EditContextFluentValidationExtensions
         var properties = new[] { fieldIdentifier.FieldName };
         var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
             
-        validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+        if (validator == null)
+        { 
+            validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+        }
 
         if (validator is not null)
         {
