@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
+using FluentValidation.Validators;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using static FluentValidation.AssemblyScanner;
@@ -76,15 +77,45 @@ public static class EditContextFluentValidationExtensions
     {
         var properties = new[] { fieldIdentifier.FieldName };
         var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
-            
+
         validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
 
         if (validator is not null)
         {
             var validationResults = await validator.ValidateAsync(context);
+            var validationRules = validator as IEnumerable<IValidationRule>;
+            var members = new List<string>();
 
-            messages.Clear(fieldIdentifier);
-            messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+            if (validationRules != null)
+            {
+                foreach (var rule in validationRules)
+                {
+                    var maybeComparison = rule.Components.FirstOrDefault()?.Validator;
+
+                    if (maybeComparison != null && maybeComparison is IComparisonValidator comparisonValidator)
+                    {
+                        var compareTo = comparisonValidator.MemberToCompare.Name;
+                        if (!members.Contains(compareTo) && rule.PropertyName == fieldIdentifier.FieldName)
+                        {
+                            members.Add(compareTo);
+                            var newProperties = properties.ToList();
+                            newProperties.Add(compareTo);
+                            properties = newProperties.ToArray();
+                            context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+                            validationResults = await validator.ValidateAsync(context);
+                        }
+                    }
+                    else
+                        members.Add(fieldIdentifier.FieldName);
+                }
+            }
+
+            foreach (var member in members)
+            {
+                var field = new FieldIdentifier(fieldIdentifier.Model, member);
+                messages.Clear(field);
+                messages.Add(field, validationResults.Errors.Where(x => x.PropertyName == field.FieldName).Select(error => error.ErrorMessage));
+            }
 
             editContext.NotifyValidationStateChanged();
         }
@@ -148,7 +179,7 @@ public static class EditContextFluentValidationExtensions
 
         var obj = editContext.Model;
         var nextTokenEnd = propertyPath.IndexOfAny(Separators);
-            
+
         // Optimize for a scenario when parsing isn't needed.
         if (nextTokenEnd < 0)
         {
@@ -175,8 +206,8 @@ public static class EditContextFluentValidationExtensions
                     // we've got an Item property
                     var indexerType = prop.GetIndexParameters()[0].ParameterType;
                     var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
-                        
-                    newObj = prop.GetValue(obj, new [] { indexerValue });
+
+                    newObj = prop.GetValue(obj, new[] { indexerValue });
                 }
                 else
                 {
@@ -211,7 +242,7 @@ public static class EditContextFluentValidationExtensions
             }
 
             obj = newObj;
-                
+
             nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
             if (nextTokenEnd < 0)
             {
