@@ -85,9 +85,9 @@
     private readonly Person _person = new();
     private FluentValidationValidator? _fluentValidationValidator;
 
-    private void SubmitValidForm()
+    private void SubmitValidForm() 
         => Console.WriteLine("Form Submitted Successfully!");
 
-    private void PartialValidate()
+    private void PartialValidate() 
         => Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
 }
