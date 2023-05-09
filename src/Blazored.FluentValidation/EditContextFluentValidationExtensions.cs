@@ -207,7 +207,7 @@ public static class EditContextFluentValidationExtensions
                     var indexerType = prop.GetIndexParameters()[0].ParameterType;
                     var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
 
-                    newObj = prop.GetValue(obj, new[] { indexerValue });
+                    newObj = prop.GetValue(obj, new [] { indexerValue });
                 }
                 else
                 {
