@@ -7,8 +7,10 @@ using FluentValidation.Results;
 
 namespace Blazored.FluentValidation;
 
-public class FluentValidationValidator : ComponentBase
+public class FluentValidationValidator : ComponentBase, IDisposable
 {
+    private IDisposable? _subscriptions;
+
     [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
 
     [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
@@ -47,7 +49,7 @@ public class FluentValidationValidator : ComponentBase
         {
             throw new NullReferenceException(nameof(CurrentEditContext));
         }
-        
+
         ValidateOptions = options;
 
         try
@@ -60,7 +62,7 @@ public class FluentValidationValidator : ComponentBase
                 throw new InvalidOperationException("No pending ValidationResult found");
             }
 
-            await (Task<ValidationResult>) asyncValidationTask;
+            await (Task<ValidationResult>)asyncValidationTask;
 
             return !CurrentEditContext.GetValidationMessages().Any();
         }
@@ -79,6 +81,19 @@ public class FluentValidationValidator : ComponentBase
                                                 $"inside an {nameof(EditForm)}.");
         }
 
-        CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+        _subscriptions = CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+
+    }
+
+    void IDisposable.Dispose()
+    {
+        _subscriptions?.Dispose();
+        _subscriptions = null;
+
+        Dispose(true);
     }
 }
