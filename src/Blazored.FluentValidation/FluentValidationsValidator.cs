@@ -2,7 +2,6 @@
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using System;
 using FluentValidation.Results;
 
 namespace Blazored.FluentValidation;

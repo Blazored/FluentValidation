@@ -2,8 +2,6 @@
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
-using System.ComponentModel.DataAnnotations;
-using System.Net.NetworkInformation;
 using static FluentValidation.AssemblyScanner;
 
 namespace Blazored.FluentValidation;
