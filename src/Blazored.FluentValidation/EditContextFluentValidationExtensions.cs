@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using System.Collections.Concurrent;
+using FluentValidation;
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,8 @@ public static class EditContextFluentValidationExtensions
     private static readonly char[] Separators = { '.', '[' };
     private static readonly List<string> ScannedAssembly = new();
     private static readonly List<AssemblyScanResult> AssemblyScanResults = new();
+    private static readonly ConcurrentDictionary<EditContext, EventHandler<ValidationRequestedEventArgs>> ValidationRequestedHandlers = new();
+    private static readonly ConcurrentDictionary<EditContext, EventHandler<FieldChangedEventArgs>> FieldChangedHandlers = new();
     public const string PendingAsyncValidation = "AsyncValidationTask";
 
     public static void AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
@@ -19,11 +22,32 @@ public static class EditContextFluentValidationExtensions
 
         var messages = new ValidationMessageStore(editContext);
 
-        editContext.OnValidationRequested +=
-            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+        EventHandler<ValidationRequestedEventArgs> validationRequestedHandler
+            = async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+        if (ValidationRequestedHandlers.TryAdd(editContext, validationRequestedHandler))
+            editContext.OnValidationRequested += validationRequestedHandler;
 
-        editContext.OnFieldChanged +=
-            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+        EventHandler<FieldChangedEventArgs> fieldChangedHandler
+            = async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+        if (FieldChangedHandlers.TryAdd(editContext, fieldChangedHandler))
+            editContext.OnFieldChanged += fieldChangedHandler;
+    }
+
+    public static void RemoveFluentValidation(this EditContext editContext)
+    {
+        ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
+
+        if (ValidationRequestedHandlers.TryGetValue(editContext, out var validationRequestedHandler))
+        {
+            editContext.OnValidationRequested -= validationRequestedHandler;
+            ValidationRequestedHandlers.TryRemove(editContext, out _);
+        }
+
+        if (FieldChangedHandlers.TryGetValue(editContext, out var fieldChangedHandler))
+        {
+            editContext.OnFieldChanged -= fieldChangedHandler;
+            FieldChangedHandlers.TryRemove(editContext, out _);
+        }
     }
 
     private static async Task ValidateModel(EditContext editContext,
