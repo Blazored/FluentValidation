@@ -17,17 +17,14 @@ public static class EditContextFluentValidationExtensions
     {
         ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
 
-        var messages = new ValidationMessageStore(editContext);
-
         editContext.OnValidationRequested +=
-            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+            async (sender, _) => await ValidateModel((EditContext)sender!, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
 
         editContext.OnFieldChanged +=
-            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+            async (_, eventArgs) => await ValidateField(editContext, fluentValidationValidator.Messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
     }
 
     private static async Task ValidateModel(EditContext editContext,
-        ValidationMessageStore messages,
         IServiceProvider serviceProvider,
         bool disableAssemblyScanning,
         FluentValidationValidator fluentValidationValidator,
@@ -56,11 +53,11 @@ public static class EditContextFluentValidationExtensions
             editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
             var validationResults = await asyncValidationTask;
 
-            messages.Clear();
+            fluentValidationValidator.Messages.Clear();
             foreach (var validationResult in validationResults.Errors)
             {
                 var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
-                messages.Add(fieldIdentifier, validationResult.ErrorMessage);
+                fluentValidationValidator.Messages.Add(fieldIdentifier, validationResult.ErrorMessage);
             }
 
             editContext.NotifyValidationStateChanged();
