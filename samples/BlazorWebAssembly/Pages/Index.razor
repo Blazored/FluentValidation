@@ -68,6 +68,7 @@
 </EditForm>
 <br />
 <button @onclick="PartialValidate">Partial Validation</button>
+<button @onclick="AddValidationResult">Add Validation Result</button>
 
 @code {
     private readonly Person _person = new();
@@ -83,4 +84,14 @@
 
     private void PartialValidate()
         => Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
+
+    private void AddValidationResult()
+    {
+        _fluentValidationValidator!.AddValidationResult(_person, new FluentValidation.Results.ValidationResult
+            {
+                Errors = new List<FluentValidation.Results.ValidationFailure> {
+                    new FluentValidation.Results.ValidationFailure { PropertyName = "EmailAddress", ErrorMessage = "This email address is taken already"}
+                }
+            });
+    }
 }
