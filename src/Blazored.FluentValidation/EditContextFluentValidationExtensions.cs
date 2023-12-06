@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,7 +78,7 @@ public static class EditContextFluentValidationExtensions
         FluentValidationValidator fluentValidationValidator,
         IValidator? validator = null)
     {
-        var propertyPath = ToFluentPropertyPath(editContext, fieldIdentifier);
+        var propertyPath = PropertyPathHelper.ToFluentPropertyPath(editContext, fieldIdentifier);
 
         if (string.IsNullOrEmpty(propertyPath))
         {
@@ -124,110 +123,6 @@ public static class EditContextFluentValidationExtensions
 
             editContext.NotifyValidationStateChanged();
         }
-    }
-
-    private class Node
-    {
-        public Node? Parent { get; set; }
-        public object ModelObject { get; set; }
-        public string? PropertyName { get; set; }
-        public int? Index { get; set; }
-    }
-    
-    private static string ToFluentPropertyPath(EditContext editContext, FieldIdentifier fieldIdentifier)
-    {
-        var nodes = new Stack<Node>();
-        nodes.Push(new Node()
-        {
-            ModelObject = editContext.Model,
-        });
-
-        while (nodes.Any())
-        {
-            var currentNode = nodes.Pop();
-            object? currentModelObject = currentNode.ModelObject;
-
-            if (currentModelObject == fieldIdentifier.Model)
-            {
-                return BuildPropertyPath(currentNode, fieldIdentifier);
-            }
-            
-            var nonPrimitiveProperties = currentModelObject
-                .GetType()
-                .GetProperties()
-                .Where(prop => !prop.PropertyType.IsPrimitive || prop.PropertyType.IsArray);
-
-            foreach (var nonPrimitiveProperty in nonPrimitiveProperties)
-            {
-                var instance = nonPrimitiveProperty.GetValue(currentModelObject);
-
-                if (instance == fieldIdentifier.Model)
-                {
-                    var node = new Node()
-                    {
-                        Parent = currentNode,
-                        PropertyName = nonPrimitiveProperty.Name,
-                        ModelObject = instance
-                    };
-                    
-                    return BuildPropertyPath(node, fieldIdentifier);
-                }
-                
-                if(instance is IEnumerable enumerable)
-                {
-                    var itemIndex = 0;
-                    foreach (var item in enumerable)
-                    {
-                        nodes.Push(new Node()
-                        {
-                            ModelObject = item,
-                            Parent = currentNode,
-                            PropertyName = nonPrimitiveProperty.Name,
-                            Index = itemIndex++
-                        });
-                    }
-                }
-                else if(instance is not null)
-                {
-                    nodes.Push(new Node()
-                    {
-                        ModelObject = instance,
-                        Parent = currentNode,
-                        PropertyName = nonPrimitiveProperty.Name
-                    });
-                }
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static string BuildPropertyPath(Node currentNode, FieldIdentifier fieldIdentifier)
-    {
-        var pathParts = new List<string>();
-        pathParts.Add(fieldIdentifier.FieldName);
-        var next = currentNode;
-
-        while (next is not null)
-        {
-            if (!string.IsNullOrEmpty(next.PropertyName))
-            {
-                if (next.Index is not null)
-                {
-                    pathParts.Add($"{next.PropertyName}[{next.Index}]");
-                }
-                else
-                {
-                    pathParts.Add(next.PropertyName);
-                }
-            }
-
-            next = next.Parent;
-        }
-
-        pathParts.Reverse();
-
-        return string.Join('.', pathParts);
     }
 
     private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
