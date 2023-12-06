@@ -10,13 +10,9 @@ namespace Blazored.FluentValidation;
 public class FluentValidationValidator : ComponentBase
 {
     [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
-
     [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
-
     [Parameter] public IValidator? Validator { get; set; }
-
     [Parameter] public bool DisableAssemblyScanning { get; set; }
-
     [Parameter] public Action<ValidationStrategy<object>>? Options { get; set; }
 
     internal Action<ValidationStrategy<object>>? ValidateOptions { get; set; }
