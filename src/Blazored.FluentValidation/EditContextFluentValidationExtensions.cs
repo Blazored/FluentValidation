@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using FluentValidation;
+using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using static FluentValidation.AssemblyScanner;
@@ -13,23 +14,20 @@ public static class EditContextFluentValidationExtensions
     private static readonly List<AssemblyScanResult> AssemblyScanResults = new();
     public const string PendingAsyncValidation = "AsyncValidationTask";
 
-    public static void AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider,
-        bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
+    public static void AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
     {
         ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
-        
+
         ValidatorOptions.Global.ValidatorSelectors.CompositeValidatorSelectorFactory =
             (selectors) => new IntersectingCompositeValidatorSelector(selectors);
 
         var messages = new ValidationMessageStore(editContext);
 
         editContext.OnValidationRequested +=
-            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider,
-                disableAssemblyScanning, fluentValidationValidator, validator);
-
+            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+        
         editContext.OnFieldChanged +=
-            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier,
-                serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
+            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
     }
 
     private static async Task ValidateModel(EditContext editContext,
@@ -87,38 +85,36 @@ public static class EditContextFluentValidationExtensions
         {
             return;
         }
-
+        
         ValidationContext<object> context;
 
         if (fluentValidationValidator.ValidateOptions is not null)
         {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model, (options) =>
-            {
-                fluentValidationValidator.ValidateOptions(options);
-                options.IncludeProperties(propertyPath);
-            });
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
         }
         else if (fluentValidationValidator.Options is not null)
         {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model, (options) =>
-            {
-                fluentValidationValidator.Options(options);
-                options.IncludeProperties(propertyPath);
-            });
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
         }
         else
         {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model, (options) =>
-            {
-                options.IncludeProperties(propertyPath);
-            });
+            context = new ValidationContext<object>(editContext.Model);
         }
 
-        validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+        var fluentValidationValidatorSelector = context.Selector;
+        var changedPropertySelector = ValidationContext<object>.CreateWithOptions(editContext.Model, strategy =>
+        {
+            strategy.IncludeProperties(propertyPath);
+        }).Selector;
+        
+        var compositeSelector =
+            new IntersectingCompositeValidatorSelector(new IValidatorSelector[] { fluentValidationValidatorSelector, changedPropertySelector });
 
+        validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+        
         if (validator is not null)
         {
-            var validationResults = await validator.ValidateAsync(context);
+            var validationResults = await validator.ValidateAsync(new ValidationContext<object>(editContext.Model, new PropertyChain(), compositeSelector));
             var errorMessages = validationResults.Errors
                 .Select(validationFailure => validationFailure.ErrorMessage)
                 .Distinct();
@@ -132,12 +128,12 @@ public static class EditContextFluentValidationExtensions
 
     private class Node
     {
-        public object ModelObject { get; set; }
         public Node? Parent { get; set; }
+        public object ModelObject { get; set; }
         public string? PropertyName { get; set; }
         public int? Index { get; set; }
     }
-
+    
     private static string ToFluentPropertyPath(EditContext editContext, FieldIdentifier fieldIdentifier)
     {
         var nodes = new Stack<Node>();
@@ -155,7 +151,7 @@ public static class EditContextFluentValidationExtensions
             {
                 return BuildPropertyPath(currentNode, fieldIdentifier);
             }
-
+            
             var nonPrimitiveProperties = currentModelObject
                 .GetType()
                 .GetProperties()
@@ -173,11 +169,11 @@ public static class EditContextFluentValidationExtensions
                         PropertyName = nonPrimitiveProperty.Name,
                         ModelObject = instance
                     };
-
+                    
                     return BuildPropertyPath(node, fieldIdentifier);
                 }
-
-                if (instance is IEnumerable enumerable)
+                
+                if(instance is IEnumerable enumerable)
                 {
                     var itemIndex = 0;
                     foreach (var item in enumerable)
@@ -191,7 +187,7 @@ public static class EditContextFluentValidationExtensions
                         });
                     }
                 }
-                else if (instance is not null)
+                else if(instance is not null)
                 {
                     nodes.Push(new Node()
                     {
@@ -234,8 +230,7 @@ public static class EditContextFluentValidationExtensions
         return string.Join('.', pathParts);
     }
 
-    private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model,
-        bool disableAssemblyScanning)
+    private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
     {
         var validatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
         try
@@ -293,7 +288,7 @@ public static class EditContextFluentValidationExtensions
 
         var obj = editContext.Model;
         var nextTokenEnd = propertyPath.IndexOfAny(Separators);
-
+            
         // Optimize for a scenario when parsing isn't needed.
         if (nextTokenEnd < 0)
         {
@@ -320,8 +315,8 @@ public static class EditContextFluentValidationExtensions
                     // we've got an Item property
                     var indexerType = prop.GetIndexParameters()[0].ParameterType;
                     var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
-
-                    newObj = prop.GetValue(obj, new[] { indexerValue });
+                        
+                    newObj = prop.GetValue(obj, new [] { indexerValue });
                 }
                 else
                 {
@@ -346,7 +341,6 @@ public static class EditContextFluentValidationExtensions
                 {
                     throw new InvalidOperationException($"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
                 }
-
                 newObj = prop.GetValue(obj);
             }
 
@@ -357,7 +351,7 @@ public static class EditContextFluentValidationExtensions
             }
 
             obj = newObj;
-
+                
             nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
             if (nextTokenEnd < 0)
             {
