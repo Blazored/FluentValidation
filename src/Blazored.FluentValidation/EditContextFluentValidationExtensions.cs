@@ -107,7 +107,7 @@ public static class EditContextFluentValidationExtensions
         }).Selector;
         
         var compositeSelector =
-            new IntersectingCompositeValidatorSelector(new IValidatorSelector[] { fluentValidationValidatorSelector, changedPropertySelector });
+            new IntersectingCompositeValidatorSelector(new[] { fluentValidationValidatorSelector, changedPropertySelector });
 
         validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
         

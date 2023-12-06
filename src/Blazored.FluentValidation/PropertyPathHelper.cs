@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using Microsoft.AspNetCore.Components.Forms;
 
 namespace Blazored.FluentValidation;
@@ -8,7 +9,7 @@ public static class PropertyPathHelper
     private class Node
     {
         public Node? Parent { get; set; }
-        public object ModelObject { get; set; }
+        public object? ModelObject { get; set; }
         public string? PropertyName { get; set; }
         public int? Index { get; set; }
     }
@@ -31,10 +32,9 @@ public static class PropertyPathHelper
                 return BuildPropertyPath(currentNode, fieldIdentifier);
             }
             
-            var nonPrimitiveProperties = currentModelObject
-                .GetType()
+            var nonPrimitiveProperties = currentModelObject?.GetType()
                 .GetProperties()
-                .Where(prop => !prop.PropertyType.IsPrimitive || prop.PropertyType.IsArray);
+                .Where(prop => !prop.PropertyType.IsPrimitive || prop.PropertyType.IsArray) ?? new List<PropertyInfo>();
 
             foreach (var nonPrimitiveProperty in nonPrimitiveProperties)
             {
