@@ -1,21 +1,31 @@
-﻿using FluentValidation;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentValidation;
 using FluentValidation.Internal;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using System;
 using FluentValidation.Results;
 
 namespace Blazored.FluentValidation;
 
 public class FluentValidationValidator : ComponentBase
 {
-    [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
+    [Inject]
+    private IServiceProvider ServiceProvider { get; set; } = default!;
 
-    [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
+    [CascadingParameter]
+    private EditContext? CurrentEditContext { get; set; }
 
-    [Parameter] public IValidator? Validator { get; set; }
-    [Parameter] public bool DisableAssemblyScanning { get; set; }
-    [Parameter] public Action<ValidationStrategy<object>>? Options { get; set; }
+    [Parameter]
+    public IValidator? Validator { get; set; }
+
+    [Parameter]
+    public bool DisableAssemblyScanning { get; set; }
+
+    [Parameter]
+    public Action<ValidationStrategy<object>>? Options { get; set; }
+
     internal Action<ValidationStrategy<object>>? ValidateOptions { get; set; }
 
     public bool Validate(Action<ValidationStrategy<object>>? options = null)
