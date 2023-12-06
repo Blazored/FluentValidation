@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace Blazored.FluentValidation;
 
-public static class PropertyPathHelper
+internal static class PropertyPathHelper
 {
     private class Node
     {
