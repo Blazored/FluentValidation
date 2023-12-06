@@ -17,6 +17,9 @@ public static class EditContextFluentValidationExtensions
         bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
     {
         ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
+        
+        ValidatorOptions.Global.ValidatorSelectors.CompositeValidatorSelectorFactory =
+            (selectors) => new IntersectingCompositeValidatorSelector(selectors);
 
         var messages = new ValidationMessageStore(editContext);
 
@@ -89,17 +92,26 @@ public static class EditContextFluentValidationExtensions
 
         if (fluentValidationValidator.ValidateOptions is not null)
         {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model,
-                (options) => { fluentValidationValidator.ValidateOptions(options); });
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, (options) =>
+            {
+                fluentValidationValidator.ValidateOptions(options);
+                options.IncludeProperties(propertyPath);
+            });
         }
         else if (fluentValidationValidator.Options is not null)
         {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model,
-                (options) => { fluentValidationValidator.Options(options); });
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, (options) =>
+            {
+                fluentValidationValidator.Options(options);
+                options.IncludeProperties(propertyPath);
+            });
         }
         else
         {
-            context = new ValidationContext<object>(editContext.Model);
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, (options) =>
+            {
+                options.IncludeProperties(propertyPath);
+            });
         }
 
         validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
@@ -108,7 +120,6 @@ public static class EditContextFluentValidationExtensions
         {
             var validationResults = await validator.ValidateAsync(context);
             var errorMessages = validationResults.Errors
-                .Where(validationFailure => validationFailure.PropertyName == propertyPath)
                 .Select(validationFailure => validationFailure.ErrorMessage)
                 .Distinct();
 
