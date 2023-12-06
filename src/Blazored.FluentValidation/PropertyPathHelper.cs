@@ -24,7 +24,7 @@ public static class PropertyPathHelper
         while (nodes.Any())
         {
             var currentNode = nodes.Pop();
-            object? currentModelObject = currentNode.ModelObject;
+            var currentModelObject = currentNode.ModelObject;
 
             if (currentModelObject == fieldIdentifier.Model)
             {
