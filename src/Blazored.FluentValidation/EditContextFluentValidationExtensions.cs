@@ -44,13 +44,11 @@ public static class EditContextFluentValidationExtensions
 
             if (fluentValidationValidator.ValidateOptions is not null)
             {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model,
-                    fluentValidationValidator.ValidateOptions);
+                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
             }
             else if (fluentValidationValidator.Options is not null)
             {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model,
-                    fluentValidationValidator.Options);
+                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
             }
             else
             {
@@ -123,8 +121,8 @@ public static class EditContextFluentValidationExtensions
 
     private class Node
     {
-        public Node? Parent { get; set; }
         public object ModelObject { get; set; }
+        public Node? Parent { get; set; }
         public string? PropertyName { get; set; }
         public int? Index { get; set; }
     }
@@ -246,8 +244,7 @@ public static class EditContextFluentValidationExtensions
             return null;
         }
 
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
-                     .Where(i => i.FullName is not null && !ScannedAssembly.Contains(i.FullName)))
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(i => i.FullName is not null && !ScannedAssembly.Contains(i.FullName)))
         {
             try
             {
@@ -263,8 +260,7 @@ public static class EditContextFluentValidationExtensions
 
 
         var interfaceValidatorType = typeof(IValidator<>).MakeGenericType(model.GetType());
-        var modelValidatorType = AssemblyScanResults
-            .FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
+        var modelValidatorType = AssemblyScanResults.FirstOrDefault(i => interfaceValidatorType.IsAssignableFrom(i.InterfaceType))?.ValidatorType;
 
         if (modelValidatorType is null)
         {
@@ -327,8 +323,7 @@ public static class EditContextFluentValidationExtensions
                     }
                     else
                     {
-                        throw new InvalidOperationException(
-                            $"Could not find indexer on object of type {obj.GetType().FullName}.");
+                        throw new InvalidOperationException($"Could not find indexer on object of type {obj.GetType().FullName}.");
                     }
                 }
             }
@@ -338,8 +333,7 @@ public static class EditContextFluentValidationExtensions
                 var prop = obj.GetType().GetProperty(nextToken.ToString());
                 if (prop == null)
                 {
-                    throw new InvalidOperationException(
-                        $"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
+                    throw new InvalidOperationException($"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
                 }
 
                 newObj = prop.GetValue(obj);
