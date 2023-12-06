@@ -17,9 +17,6 @@ public static class EditContextFluentValidationExtensions
     {
         ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
 
-        ValidatorOptions.Global.ValidatorSelectors.CompositeValidatorSelectorFactory =
-            (selectors) => new IntersectingCompositeValidatorSelector(selectors);
-
         var messages = new ValidationMessageStore(editContext);
 
         editContext.OnValidationRequested +=
