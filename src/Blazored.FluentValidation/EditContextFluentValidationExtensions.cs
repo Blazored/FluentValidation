@@ -37,20 +37,7 @@ public static class EditContextFluentValidationExtensions
 
         if (validator is not null)
         {
-            ValidationContext<object> context;
-
-            if (fluentValidationValidator.ValidateOptions is not null)
-            {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
-            }
-            else if (fluentValidationValidator.Options is not null)
-            {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
-            }
-            else
-            {
-                context = new ValidationContext<object>(editContext.Model);
-            }
+            var context = ConstructValidationContext(editContext, fluentValidationValidator);
 
             var asyncValidationTask = validator.ValidateAsync(context);
             editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
@@ -82,20 +69,7 @@ public static class EditContextFluentValidationExtensions
             return;
         }
         
-        ValidationContext<object> context;
-
-        if (fluentValidationValidator.ValidateOptions is not null)
-        {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
-        }
-        else if (fluentValidationValidator.Options is not null)
-        {
-            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
-        }
-        else
-        {
-            context = new ValidationContext<object>(editContext.Model);
-        }
+        var context = ConstructValidationContext(editContext, fluentValidationValidator);
 
         var fluentValidationValidatorSelector = context.Selector;
         var changedPropertySelector = ValidationContext<object>.CreateWithOptions(editContext.Model, strategy =>
@@ -120,6 +94,27 @@ public static class EditContextFluentValidationExtensions
 
             editContext.NotifyValidationStateChanged();
         }
+    }
+
+    private static ValidationContext<object> ConstructValidationContext(EditContext editContext,
+        FluentValidationValidator fluentValidationValidator)
+    {
+        ValidationContext<object> context;
+
+        if (fluentValidationValidator.ValidateOptions is not null)
+        {
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
+        }
+        else if (fluentValidationValidator.Options is not null)
+        {
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
+        }
+        else
+        {
+            context = new ValidationContext<object>(editContext.Model);
+        }
+
+        return context;
     }
 
     private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
