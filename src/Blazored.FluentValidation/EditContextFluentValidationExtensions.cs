@@ -86,6 +86,7 @@ public static class EditContextFluentValidationExtensions
         {
             var validationResults = await validator.ValidateAsync(new ValidationContext<object>(editContext.Model, new PropertyChain(), compositeSelector));
             var errorMessages = validationResults.Errors
+                .Where(validationFailure => validationFailure.PropertyName == propertyPath)
                 .Select(validationFailure => validationFailure.ErrorMessage)
                 .Distinct();
 
