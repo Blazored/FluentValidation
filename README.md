@@ -97,9 +97,9 @@ If you're using async validation, you can use the `ValidateAsync` method on the 
 
 @code {
     private Person _person = new();
-	private FluentValidationValidator? _fluentValidationValidator;
+    private FluentValidationValidator? _fluentValidationValidator;
 
-    private void SubmitFormAsync()
+    private async void SubmitFormAsync()
     {
 		if (await _fluentValidationValidator!.ValidateAsync())
         {
