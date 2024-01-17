@@ -16,15 +16,15 @@ internal static class PropertyPathHelper
 
     public static string ToFluentPropertyPath(EditContext editContext, FieldIdentifier fieldIdentifier)
     {
-        var nodes = new Stack<Node>();
-        nodes.Push(new Node()
+        var nodes = new Queue<Node>();
+        nodes.Enqueue(new Node()
         {
             ModelObject = editContext.Model,
         });
 
         while (nodes.Any())
         {
-            var currentNode = nodes.Pop();
+            var currentNode = nodes.Dequeue();
             var currentModelObject = currentNode.ModelObject;
 
             if (currentModelObject == fieldIdentifier.Model)
@@ -57,7 +57,7 @@ internal static class PropertyPathHelper
                     var itemIndex = 0;
                     foreach (var item in enumerable)
                     {
-                        nodes.Push(new Node()
+                        nodes.Enqueue(new Node()
                         {
                             ModelObject = item,
                             Parent = currentNode,
@@ -68,7 +68,7 @@ internal static class PropertyPathHelper
                 }
                 else if(instance is not null)
                 {
-                    nodes.Push(new Node()
+                    nodes.Enqueue(new Node()
                     {
                         ModelObject = instance,
                         Parent = currentNode,
