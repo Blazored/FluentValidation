@@ -9,6 +9,8 @@ namespace SharedModels
         public int? Age { get; set; }
         public string? EmailAddress { get; set; }
         public Address Address { get; set; } = new();
+        public int StartLuckyNumberRange { get; set; }
+        public int EndLuckyNumberRange { get; set; }
     }
 
     public class PersonValidator : AbstractValidator<Person>
@@ -35,6 +37,9 @@ namespace SharedModels
                 .NotEmpty().WithMessage("You must enter an email address")
                 .EmailAddress().WithMessage("You must provide a valid email address")
                 .MustAsync(async (email, _) => await IsUniqueAsync(email)).WithMessage("Email address must be unique");
+
+            RuleFor(p => p.StartLuckyNumberRange).LessThan(p => p.EndLuckyNumberRange).WithMessage("Start lucky number must be less than end lucky number");
+            RuleFor(p => p.EndLuckyNumberRange).GreaterThan(p => p.StartLuckyNumberRange).WithMessage("End lucky number must be greater than start lucky number");
 
             RuleFor(p => p.Address).SetValidator(new AddressValidator());
         }
