@@ -1,9 +1,9 @@
 # FluentValidation
 A library for using FluentValidation with Blazor
 
+[![Nuget version](https://img.shields.io/nuget/v/Blazored.FluentValidation.svg?logo=nuget)](https://www.nuget.org/packages/Blazored.FluentValidation/)
+[![Nuget downloads](https://img.shields.io/nuget/dt/Blazored.FluentValidation?logo=nuget)](https://www.nuget.org/packages/Blazored.FluentValidation/)
 ![Build & Test Main](https://github.com/Blazored/FluentValidation/workflows/Build%20&%20Test%20Main/badge.svg)
-
-![Nuget](https://img.shields.io/nuget/v/blazored.fluentvalidation.svg)
 
 ## Installing
 
