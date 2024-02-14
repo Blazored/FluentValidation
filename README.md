@@ -130,3 +130,31 @@ The second is when manually validating the model using the `Validate` or `Valida
         => _fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"));
 }
 ```
+
+## Access to full `ValidationFailure`
+If you need details about the specifics of a validation result (e.g. its `Severity), you can access the result of the 
+last validation by calling the `GetFailuresFromLastValidation` method on the `FluentValidationValidator` component.
+
+```razor
+<div class="validation-message @GetValidationClass()">
+    <input type="text" @bind="@_person.Name" />
+</div>
+
+@code {
+    private FluentValidationValidator? _fluentValidationValidator;
+
+    private string GetValidationClass() 
+    {
+        var lastResult = _fluentValidationValidator?.GetFailuresFromLastValidation();
+        if (lastResult is null || !lastResult.Any())
+        {
+            return "valid";
+        }
+        if (lastResult.Any(failure => failure.Severity == Severity.Error))
+        {
+            return "invalid";
+        }
+        return "warning";
+    }
+}
+```
