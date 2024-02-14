@@ -14,20 +14,17 @@ public static class EditContextFluentValidationExtensions
     private static readonly List<AssemblyScanResult> AssemblyScanResults = new();
     public const string PendingAsyncValidation = "AsyncValidationTask";
 
-    public static void AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning,
-        IValidator? validator, FluentValidationValidator fluentValidationValidator)
+    public static void AddFluentValidation(this EditContext editContext, IServiceProvider serviceProvider, bool disableAssemblyScanning, IValidator? validator, FluentValidationValidator fluentValidationValidator)
     {
         ArgumentNullException.ThrowIfNull(editContext, nameof(editContext));
 
         var messages = new ValidationMessageStore(editContext);
 
         editContext.OnValidationRequested +=
-            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning,
-                fluentValidationValidator, validator);
+            async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
 
         editContext.OnFieldChanged +=
-            async (_, eventArgs) =>
-                await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
     }
 
     private static async Task ValidateModel(EditContext editContext,
@@ -91,7 +88,7 @@ public static class EditContextFluentValidationExtensions
     {
         var properties = new[] { fieldIdentifier.FieldName };
         var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
-
+            
         validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
 
         if (validator is not null)
@@ -163,7 +160,7 @@ public static class EditContextFluentValidationExtensions
 
         var obj = editContext.Model;
         var nextTokenEnd = propertyPath.IndexOfAny(Separators);
-
+            
         // Optimize for a scenario when parsing isn't needed.
         if (nextTokenEnd < 0)
         {
@@ -190,8 +187,8 @@ public static class EditContextFluentValidationExtensions
                     // we've got an Item property
                     var indexerType = prop.GetIndexParameters()[0].ParameterType;
                     var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
-
-                    newObj = prop.GetValue(obj, new[] { indexerValue });
+                        
+                    newObj = prop.GetValue(obj, new [] { indexerValue });
                 }
                 else
                 {
@@ -214,10 +211,8 @@ public static class EditContextFluentValidationExtensions
                 var prop = obj.GetType().GetProperty(nextToken.ToString());
                 if (prop == null)
                 {
-                    throw new InvalidOperationException(
-                        $"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
+                    throw new InvalidOperationException($"Could not find property named {nextToken.ToString()} on object of type {obj.GetType().FullName}.");
                 }
-
                 newObj = prop.GetValue(obj);
             }
 
@@ -228,7 +223,7 @@ public static class EditContextFluentValidationExtensions
             }
 
             obj = newObj;
-
+                
             nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
             if (nextTokenEnd < 0)
             {
