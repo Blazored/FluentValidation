@@ -17,6 +17,7 @@ public class FluentValidationValidator : ComponentBase
     [Parameter] public bool DisableAssemblyScanning { get; set; }
     [Parameter] public Action<ValidationStrategy<object>>? Options { get; set; }
     internal Action<ValidationStrategy<object>>? ValidateOptions { get; set; }
+    internal Dictionary<FieldIdentifier, List<ValidationFailure>>? LastValidationResult { get; set; }
 
     public bool Validate(Action<ValidationStrategy<object>>? options = null)
     {
@@ -80,5 +81,24 @@ public class FluentValidationValidator : ComponentBase
         }
 
         CurrentEditContext.AddFluentValidation(ServiceProvider, DisableAssemblyScanning, Validator, this);
+    }
+
+    /// <summary>
+    /// Gets the full details of the last validation result, optionally by field.
+    /// </summary>
+    /// <param name="fieldIdentifier">If set, only returns the validation failures pertaining to the given field.</param>
+    /// <returns>Validation failures.</returns>
+    public ValidationFailure[] GetFailuresFromLastValidation(FieldIdentifier? fieldIdentifier = null)
+    {
+        if (LastValidationResult is null)
+            return Array.Empty<ValidationFailure>();
+
+        if (fieldIdentifier is null)
+            return LastValidationResult.Values.SelectMany(f => f).ToArray();
+        
+        if (!LastValidationResult.TryGetValue(fieldIdentifier.Value, out var failures))
+             return Array.Empty<ValidationFailure>();
+        
+        return failures.ToArray();
     }
 }
