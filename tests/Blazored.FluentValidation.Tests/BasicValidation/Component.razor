@@ -1,0 +1,44 @@
+﻿@using Blazored.FluentValidation.Tests.Model
+<EditForm
+    Model="@_person"
+    OnValidSubmit="ValidSubmit"
+    OnInvalidSubmit="InvalidSubmit">
+
+    <FluentValidationValidator/>
+    <ValidationSummary/>
+
+    <p>
+        <label>First name: </label>
+        <InputText name="@nameof(_person.FirstName)" @bind-Value="@_person.FirstName"/>
+    </p>
+
+    <p>
+        <label>Last name: </label>
+        <InputText name="@nameof(_person.LastName)" @bind-Value="@_person.LastName"/>
+    </p>
+
+    <p>
+        <label>Age: </label>
+        <InputNumber name="@nameof(_person.Age)" @bind-Value="@_person.Age"/>
+    </p>
+
+    <p>
+        <label>Email Address: </label>
+        <InputText name="@nameof(_person.EmailAddress)" @bind-Value="@_person.EmailAddress"/>
+    </p>
+
+    <p>
+        <label>Address Line 1: </label>
+        <InputText name="@nameof(_person.Address.Line1)" @bind-Value="@_person.Address.Line1"/>
+    </p>
+
+    <button type="submit">Save</button>
+</EditForm>
+
+@code {
+    private readonly Person _person = new();
+    internal ValidationResultType Result { get; private set; } = ValidationResultType.Valid;
+
+    private void ValidSubmit() => Result = ValidationResultType.Valid;
+    private void InvalidSubmit() => Result = ValidationResultType.Error;
+}
