@@ -6,7 +6,7 @@
         public string? LastName { get; set; }
         public int? Age { get; set; }
         public string? EmailAddress { get; set; }
-        public Address Address { get; set; } = new();
+        public Address? Address { get; set; }
     }
 
     public class PersonValidator : AbstractValidator<Person>
@@ -46,7 +46,9 @@
                 .EmailAddress().WithMessage(EmailValid)
                 .MustAsync(async (email, _) => await IsUniqueAsync(email)).WithMessage(EmailUnique);
 
-            RuleFor(p => p.Address).SetValidator(new AddressValidator());
+            RuleFor(p => p.Address!)
+                .SetValidator(new AddressValidator())
+                .When(p => p.Address is not null);
         }
 
         private static async Task<bool> IsUniqueAsync(string? email)

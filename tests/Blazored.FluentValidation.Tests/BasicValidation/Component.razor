@@ -28,14 +28,14 @@
 
     <p>
         <label>Address Line 1: </label>
-        <InputText name="@nameof(_person.Address.Line1)" @bind-Value="@_person.Address.Line1"/>
+        <InputText name="@nameof(_person.Address.Line1)" @bind-Value="@_person.Address!.Line1"/>
     </p>
 
     <button type="submit">Save</button>
 </EditForm>
 
 @code {
-    private readonly Person _person = new();
+    private readonly Person _person = new() { Address = new() };
     internal ValidationResultType Result { get; private set; } = ValidationResultType.Valid;
 
     private void ValidSubmit() => Result = ValidationResultType.Valid;

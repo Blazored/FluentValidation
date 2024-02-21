@@ -1,11 +1,10 @@
 ﻿using Blazored.FluentValidation.Tests.Model;
-
 namespace Blazored.FluentValidation.Tests.AsyncValidation;
 
 public class Tests : TestContext
 {
     private readonly Fixture _fixture = new();
-    
+
     [Fact]
     public void AsyncValidate_PersonIsValid_ResultIsValid()
     {
@@ -16,47 +15,43 @@ public class Tests : TestContext
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
+        cut.WaitForState(() => cut.Instance.Result is not null);
 
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Valid);
     }
-    
+
     [Fact]
-    public void AsyncValidate_FirstNameTooLong_ResultIsError()
+    public void AsyncValidate_AgeNegative_ResultIsError()
     {
         // Arrange
         var cut = RenderComponent<Component>();
-        var person = _fixture.ValidPerson() with
-        {
-            FirstName = "This is a very long first name that is over 50 characters long"
-        };
+        var person = _fixture.ValidPerson() with { Age = -5 };
 
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
+        cut.WaitForState(() => cut.Instance.Result is not null);
 
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Error);
     }
-    
+
     [Fact]
-    public void AsyncValidate_FirstNameTooLong_ValidationMessagesPresent()
+    public void AsyncValidate_AgeNegative_ValidationMessagesPresent()
     {
         // Arrange
         var cut = RenderComponent<Component>();
-        var person = _fixture.ValidPerson() with
-        {
-            FirstName = "This is a very long first name that is over 50 characters long",
-            LastName = "",
-        };
+        var person = _fixture.ValidPerson() with { Age = -5 };
 
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
+        cut.WaitForState(() => cut.Instance.Result is not null);
 
         // Assert
-        cut.Find(".validation-errors>.validation-message").TextContent.Should().Contain(PersonValidator.FirstNameMaxLength);
-        cut.Find("li.validation-message").TextContent.Should().Contain(PersonValidator.FirstNameMaxLength);
+        cut.Find(".validation-errors>.validation-message").TextContent.Should().Contain(PersonValidator.AgeMin);
+        cut.Find("li.validation-message").TextContent.Should().Contain(PersonValidator.AgeMin);
     }
 
     private void FillForm(IRenderedComponent<Component> cut, Person person)

@@ -30,12 +30,11 @@
     private readonly Person _person = new();
     private FluentValidationValidator? _fluentValidationValidator;
 
-    public ValidationResultType Result { get; private set; }
+    public ValidationResultType? Result { get; private set; }
 
     private async Task SubmitFormAsync()
     {
         var result = await _fluentValidationValidator!.ValidateAsync();
         Result = result ? ValidationResultType.Valid : ValidationResultType.Error;
     }
-
 }

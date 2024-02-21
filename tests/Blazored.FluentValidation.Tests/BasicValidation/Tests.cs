@@ -88,7 +88,7 @@ public class Tests : TestContext
         cut.Find($"input[name={nameof(Person.LastName)}]").Change(person.LastName);
         cut.Find($"input[name={nameof(Person.EmailAddress)}]").Change(person.EmailAddress);
         cut.Find($"input[name={nameof(Person.Age)}]").Change(person.Age.ToString());
-        cut.Find($"input[name={nameof(Person.Address.Line1)}]").Change(person.Address.Line1);
+        cut.Find($"input[name={nameof(Person.Address.Line1)}]").Change(person.Address!.Line1);
     }
 
     private class Fixture
