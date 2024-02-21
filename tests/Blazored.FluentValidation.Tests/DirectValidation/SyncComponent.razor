@@ -1,4 +1,4 @@
-﻿<EditForm Model="@_person" OnSubmit="SubmitFormAsync">
+﻿<EditForm Model="@_person" OnSubmit="Submit">
     <FluentValidationValidator @ref="_fluentValidationValidator"/>
     <ValidationSummary/>
 
@@ -31,9 +31,9 @@
 
     public ValidationResultType? Result { get; private set; }
 
-    private async Task SubmitFormAsync()
+    private void Submit()
     {
-        var result = await _fluentValidationValidator!.ValidateAsync();
+        var result = _fluentValidationValidator!.Validate();
         Result = result ? ValidationResultType.Valid : ValidationResultType.Error;
     }
 }

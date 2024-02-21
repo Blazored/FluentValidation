@@ -1,15 +1,16 @@
 ﻿using Blazored.FluentValidation.Tests.Model;
-namespace Blazored.FluentValidation.Tests.AsyncValidation;
 
-public class Tests : TestContext
+namespace Blazored.FluentValidation.Tests.DirectValidation;
+
+public class AsyncTests : TestContext
 {
     private readonly Fixture _fixture = new();
 
     [Fact]
-    public void AsyncValidate_PersonIsValid_ResultIsValid()
+    public void ValidateAsync_PersonIsValid_ResultIsValid()
     {
         // Arrange
-        var cut = RenderComponent<Component>();
+        var cut = RenderComponent<AsyncComponent>();
         var person = _fixture.ValidPerson();
 
         // Act
@@ -22,10 +23,10 @@ public class Tests : TestContext
     }
 
     [Fact]
-    public void AsyncValidate_AgeNegative_ResultIsError()
+    public void ValidateAsync_AgeNegative_ResultIsError()
     {
         // Arrange
-        var cut = RenderComponent<Component>();
+        var cut = RenderComponent<AsyncComponent>();
         var person = _fixture.ValidPerson() with { Age = -5 };
 
         // Act
@@ -38,10 +39,10 @@ public class Tests : TestContext
     }
 
     [Fact]
-    public void AsyncValidate_AgeNegative_ValidationMessagesPresent()
+    public void ValidateAsync_AgeNegative_ValidationMessagesPresent()
     {
         // Arrange
-        var cut = RenderComponent<Component>();
+        var cut = RenderComponent<AsyncComponent>();
         var person = _fixture.ValidPerson() with { Age = -5 };
 
         // Act
@@ -54,7 +55,7 @@ public class Tests : TestContext
         cut.Find("li.validation-message").TextContent.Should().Contain(PersonValidator.AgeMin);
     }
 
-    private void FillForm(IRenderedComponent<Component> cut, Person person)
+    private void FillForm(IRenderedComponent<AsyncComponent> cut, Person person)
     {
         cut.Find("input[name=FirstName]").Change(person.FirstName);
         cut.Find("input[name=LastName]").Change(person.LastName);
