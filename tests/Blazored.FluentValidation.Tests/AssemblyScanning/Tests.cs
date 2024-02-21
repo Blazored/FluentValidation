@@ -51,6 +51,22 @@ public class Tests : TestContext
         cut.Instance.Result.Should().Be(ValidationResultType.Error);
     }
     
+    [Fact]
+    public void DisableAssemblyScanning_SetToTrueButValidatorsRegistered_ValidationHappens()
+    {
+        // Arrange
+        Services.AddTransient<AbstractValidator<Person>, PersonValidator>();
+        var cut = RenderComponent<Component>(p => p.Add(c => c.DisableAssemblyScanning, null));
+        var person = _fixture.InvalidPerson();
+
+        // Act
+        cut.Find($"input[name={nameof(Person.FirstName)}]").Change(person.FirstName);
+        cut.Find("button").Click();
+
+        // Assert
+        cut.Instance.Result.Should().Be(ValidationResultType.Error);
+    }
+    
     private class Fixture
     {
         public Person InvalidPerson() => new()
