@@ -18,6 +18,7 @@
         public const string AgeRequired = "You must enter your age";
         public const string AgeMin = "Age must be greater than 0";
         public const string AgeMax = "Age cannot be greater than 150";
+        public const string AgeSuspect = "Age is suspect. Troll?";
         public const string EmailRequired = "You must enter an email address";
         public const string EmailValid = "You must provide a valid email address";
         public const string EmailUnique = "Email address must be unique";
@@ -49,6 +50,11 @@
             RuleFor(p => p.Address!)
                 .SetValidator(new AddressValidator())
                 .When(p => p.Address is not null);
+
+            RuleFor(p => p.Age)
+                .NotEqual(69)
+                .WithMessage(AgeSuspect)
+                .WithSeverity(Severity.Warning);
         }
 
         private static async Task<bool> IsUniqueAsync(string? email)
