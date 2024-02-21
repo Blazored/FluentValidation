@@ -36,10 +36,6 @@
 	  <ProjectReference Include="..\..\src\Blazored.FluentValidation\Blazored.FluentValidation.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="RuleSets\" />
-	</ItemGroup>
-
 
 
 </Project>
