@@ -199,6 +199,16 @@ public static class EditContextFluentValidationExtensions
                         var indexerValue = int.Parse(nextToken);
                         newObj = array[indexerValue];
                     }
+                    else if (obj is IReadOnlyList<object> readOnlyList)
+                    {
+                        // Addresses an issue with collection expressions in C# 12 regarding IReadOnlyList:
+                        // Generates a <>z__ReadOnlyArray which:
+                        // - lacks an Item property, and
+                        // - cannot be cast to object[] successfully.
+                        // This workaround accesses elements directly using an indexer.
+                        var indexerValue = int.Parse(nextToken);
+                        newObj = readOnlyList[indexerValue];
+                    }
                     else
                     {
                         throw new InvalidOperationException($"Could not find indexer on object of type {obj.GetType().FullName}.");
