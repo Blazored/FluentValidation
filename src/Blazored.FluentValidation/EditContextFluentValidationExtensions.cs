@@ -22,9 +22,9 @@ public static class EditContextFluentValidationExtensions
 
         editContext.OnValidationRequested +=
             async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
-
+        
         editContext.OnFieldChanged +=
-            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
     }
 
     private static async Task ValidateModel(EditContext editContext,
@@ -38,20 +38,7 @@ public static class EditContextFluentValidationExtensions
 
         if (validator is not null)
         {
-            ValidationContext<object> context;
-
-            if (fluentValidationValidator.ValidateOptions is not null)
-            {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
-            }
-            else if (fluentValidationValidator.Options is not null)
-            {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
-            }
-            else
-            {
-                context = new ValidationContext<object>(editContext.Model);
-            }
+            var context = ConstructValidationContext(editContext, fluentValidationValidator);
 
             var asyncValidationTask = validator.ValidateAsync(context);
             editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
@@ -84,22 +71,63 @@ public static class EditContextFluentValidationExtensions
         FieldIdentifier fieldIdentifier,
         IServiceProvider serviceProvider,
         bool disableAssemblyScanning,
+        FluentValidationValidator fluentValidationValidator,
         IValidator? validator = null)
     {
-        var properties = new[] { fieldIdentifier.FieldName };
-        var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
-            
-        validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+        var propertyPath = PropertyPathHelper.ToFluentPropertyPath(editContext, fieldIdentifier);
 
+        if (string.IsNullOrEmpty(propertyPath))
+        {
+            return;
+        }
+        
+        var context = ConstructValidationContext(editContext, fluentValidationValidator);
+
+        var fluentValidationValidatorSelector = context.Selector;
+        var changedPropertySelector = ValidationContext<object>.CreateWithOptions(editContext.Model, strategy =>
+        {
+            strategy.IncludeProperties(propertyPath);
+        }).Selector;
+        
+        var compositeSelector =
+            new IntersectingCompositeValidatorSelector(new[] { fluentValidationValidatorSelector, changedPropertySelector });
+
+        validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
+        
         if (validator is not null)
         {
-            var validationResults = await validator.ValidateAsync(context);
+            var validationResults = await validator.ValidateAsync(new ValidationContext<object>(editContext.Model, new PropertyChain(), compositeSelector));
+            var errorMessages = validationResults.Errors
+                .Where(validationFailure => validationFailure.PropertyName == propertyPath)
+                .Select(validationFailure => validationFailure.ErrorMessage)
+                .Distinct();
 
             messages.Clear(fieldIdentifier);
-            messages.Add(fieldIdentifier, validationResults.Errors.Select(error => error.ErrorMessage));
+            messages.Add(fieldIdentifier, errorMessages);
 
             editContext.NotifyValidationStateChanged();
         }
+    }
+
+    private static ValidationContext<object> ConstructValidationContext(EditContext editContext,
+        FluentValidationValidator fluentValidationValidator)
+    {
+        ValidationContext<object> context;
+
+        if (fluentValidationValidator.ValidateOptions is not null)
+        {
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
+        }
+        else if (fluentValidationValidator.Options is not null)
+        {
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
+        }
+        else
+        {
+            context = new ValidationContext<object>(editContext.Model);
+        }
+
+        return context;
     }
 
     private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
