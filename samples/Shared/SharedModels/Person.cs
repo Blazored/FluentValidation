@@ -28,6 +28,13 @@ namespace SharedModels
 
             RuleFor(p => p.Age)
                 .NotNull().WithMessage("You must enter your age")
+                .Custom((age, context) =>
+                {
+                    if (context.RootContextData.TryGetValue("MinAgeLimit", out var ageValue) && ageValue is int minAge && age < minAge)
+                    {
+                        context.AddFailure($"Age must be greater than {minAge}");
+                    }
+                })
                 .GreaterThanOrEqualTo(0).WithMessage("Age must be greater than 0")
                 .LessThan(150).WithMessage("Age cannot be greater than 150");
 

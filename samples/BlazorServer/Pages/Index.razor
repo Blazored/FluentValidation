@@ -5,7 +5,7 @@
 <hr class="mb-5" />
 
 <EditForm Model="@_person" OnValidSubmit="@SubmitValidForm">
-    <FluentValidationValidator @ref="_fluentValidationValidator" DisableAssemblyScanning="@true" />
+    <FluentValidationValidator @ref="_fluentValidationValidator" DisableAssemblyScanning="@true" ContextData="_data" />
     <ValidationSummary />
 
     <p>
@@ -72,6 +72,10 @@
 @code {
     private readonly Person _person = new();
     private FluentValidationValidator? _fluentValidationValidator;
+    private readonly IDictionary<string, object> _data = new Dictionary<string, object>
+    {
+        { "MinAgeLimit", 18 }
+    };
 
     private void SubmitValidForm() 
         => Console.WriteLine("Form Submitted Successfully!");
