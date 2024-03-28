@@ -1,0 +1,54 @@
+﻿<EditForm
+    Model="@_person"
+    OnSubmit="Submit">
+
+    <FluentValidationValidator @ref="_fluentValidationValidator"/>
+    <ValidationSummary/>
+
+    <p>
+        <label>First name: </label>
+        <InputText name="@nameof(Person.FirstName)" @bind-Value="@_person.FirstName"/>
+    </p>
+
+    <p>
+        <label>Last name: </label>
+        <InputText name="@nameof(_person.LastName)" @bind-Value="@_person.LastName"/>
+    </p>
+
+    <p>
+        <label>Age: </label>
+        <InputNumber name="@nameof(_person.Age)" @bind-Value="@_person.Age"/>
+    </p>
+
+    <p>
+        <label>Email Address: </label>
+        <InputText name="@nameof(_person.EmailAddress)" @bind-Value="@_person.EmailAddress"/>
+    </p>
+
+    <button type="submit">Save</button>
+</EditForm>
+
+@code {
+    private readonly Person _person = new();
+    private FluentValidationValidator? _fluentValidationValidator;
+
+    public ValidationResultType? Result { get; private set; }
+
+    protected void Submit()
+    {
+        _fluentValidationValidator!.Validate();
+        var lastResult = _fluentValidationValidator!.GetFailuresFromLastValidation();
+        if (!lastResult.Any())
+        {
+            Result = ValidationResultType.Valid;
+        }
+        else if (lastResult.Any(failure => failure.Severity == Severity.Error))
+        {
+            Result = ValidationResultType.Error;
+        }
+        else
+        {
+            Result = ValidationResultType.Warning;
+        }
+    }
+}
