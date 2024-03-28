@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using static FluentValidation.AssemblyScanner;
@@ -57,10 +58,21 @@ public static class EditContextFluentValidationExtensions
             var validationResults = await asyncValidationTask;
 
             messages.Clear();
+            fluentValidationValidator.LastValidationResult = new Dictionary<FieldIdentifier, List<ValidationFailure>>();
+            
             foreach (var validationResult in validationResults.Errors)
             {
                 var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
                 messages.Add(fieldIdentifier, validationResult.ErrorMessage);
+                
+                if (fluentValidationValidator.LastValidationResult.TryGetValue(fieldIdentifier, out var failures))
+                {
+                    failures.Add(validationResult);
+                }
+                else
+                {
+                    fluentValidationValidator.LastValidationResult.Add(fieldIdentifier, new List<ValidationFailure> { validationResult });
+                }
             }
 
             editContext.NotifyValidationStateChanged();
@@ -186,6 +198,16 @@ public static class EditContextFluentValidationExtensions
                     {
                         var indexerValue = int.Parse(nextToken);
                         newObj = array[indexerValue];
+                    }
+                    else if (obj is IReadOnlyList<object> readOnlyList)
+                    {
+                        // Addresses an issue with collection expressions in C# 12 regarding IReadOnlyList:
+                        // Generates a <>z__ReadOnlyArray which:
+                        // - lacks an Item property, and
+                        // - cannot be cast to object[] successfully.
+                        // This workaround accesses elements directly using an indexer.
+                        var indexerValue = int.Parse(nextToken);
+                        newObj = readOnlyList[indexerValue];
                     }
                     else
                     {
