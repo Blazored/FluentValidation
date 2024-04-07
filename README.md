@@ -101,7 +101,7 @@ If you're using async validation, you can use the `ValidateAsync` method on the 
 
     private async void SubmitFormAsync()
     {
-		if (await _fluentValidationValidator!.ValidateAsync())
+        if (await _fluentValidationValidator!.ValidateAsync())
         {
             Console.WriteLine("Form Submitted Successfully!");
         }
