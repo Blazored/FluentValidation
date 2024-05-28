@@ -1,5 +1,4 @@
-﻿using System;
-using Blazored.FluentValidation.Tests.Model;
+﻿using Blazored.FluentValidation.Tests.Model;
 
 namespace Blazored.FluentValidation.Tests.FullFailureAccess;
 
@@ -13,45 +12,45 @@ public class SyncTests : TestContext
         // Arrange
         var person = _fixture.ValidPerson();
         var cut = RenderComponent<SyncComponent>();
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
-        
+
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Valid);
     }
-    
+
     [Fact]
     public void GetFailuresFromLastValidation_EmailInvalid_ResultIsError()
     {
         // Arrange
         var person = _fixture.ValidPerson() with { EmailAddress = "invalid-email" };
         var cut = RenderComponent<SyncComponent>();
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
-        
+
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Error);
     }
-    
+
     [Fact]
     public void GetFailuresFromLastValidation_AgeSuspect_ResultIsWarning()
     {
         // Arrange
         var person = _fixture.ValidPerson() with { Age = 69 };
         var cut = RenderComponent<SyncComponent>();
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
-        
+
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Warning);
     }
-   
+
 
     private static void FillForm(IRenderedComponent<SyncComponent> cut, Person person)
     {

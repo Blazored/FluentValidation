@@ -5,7 +5,7 @@ namespace Blazored.FluentValidation.Tests.AssemblyScanning;
 public class Tests : TestContext
 {
     private readonly Fixture _fixture = new();
-    
+
     [Fact]
     public void DisableAssemblyScanning_SetToTrue_NoValidationHappens()
     {
@@ -50,7 +50,7 @@ public class Tests : TestContext
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Error);
     }
-    
+
     [Fact]
     public void DisableAssemblyScanning_SetToTrueButValidatorsRegistered_ValidationHappens()
     {
@@ -66,7 +66,7 @@ public class Tests : TestContext
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Error);
     }
-    
+
     private class Fixture
     {
         public Person InvalidPerson() => new()
