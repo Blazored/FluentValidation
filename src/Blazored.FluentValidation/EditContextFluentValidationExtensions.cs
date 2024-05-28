@@ -182,7 +182,7 @@ public static class EditContextFluentValidationExtensions
                 // It's an indexer
                 // This code assumes C# conventions (one indexer named Item with one param)
                 nextToken = nextToken.Slice(0, nextToken.Length - 1);
-                var prop = obj.GetType().GetProperty("Item");
+                var prop = obj.GetType().GetProperties().SingleOrDefault(p => p.Name == "Item" && p.CanWrite);
 
                 if (prop is not null)
                 {
