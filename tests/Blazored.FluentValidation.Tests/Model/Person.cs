@@ -23,7 +23,7 @@
         public const string EmailValid = "You must provide a valid email address";
         public const string EmailUnique = "Email address must be unique";
         public const string DuplicateEmail = "mail@my.com";
-        
+
         public PersonValidator()
         {
             RuleSet("Names", () =>

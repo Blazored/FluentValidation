@@ -15,7 +15,7 @@
         public const string TownRequired = "You must enter a town";
         public const string CountyRequired = "You must enter a county";
         public const string PostcodeRequired = "You must enter a postcode";
-        
+
         public AddressValidator()
         {
             RuleFor(p => p.Line1).NotEmpty().WithMessage(Line1Required);

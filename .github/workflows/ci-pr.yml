@@ -6,7 +6,7 @@ on:
 
 env:
     PROJECT_NAME: Blazored.FluentValidation
-    NETCORE_VERSION: '7.0.x'
+    NETCORE_VERSION: '8.0.x'
 
 jobs:
   build:

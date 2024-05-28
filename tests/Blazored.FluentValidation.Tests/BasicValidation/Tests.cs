@@ -58,26 +58,26 @@ public class Tests : TestContext
         // Arrange
         var cut = RenderComponent<Component>();
         var person = _fixture.ValidPerson() with { Age = 250 };
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
-        
+
         // Assert
         cut.Find(".validation-errors>.validation-message").TextContent.Should().Contain(PersonValidator.AgeMax);
     }
-    
+
     [Fact]
     public void Validate_AddressLine1Missing_ValidationErrorsPresent()
     {
         // Arrange
         var cut = RenderComponent<Component>();
         var person = _fixture.ValidPerson() with { Address = new() { Line1 = string.Empty } };
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
-        
+
         // Assert
         cut.Find(".validation-errors>.validation-message").TextContent.Should().Contain(AddressValidator.Line1Required);
     }

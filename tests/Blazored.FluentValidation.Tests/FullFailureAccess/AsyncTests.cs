@@ -13,48 +13,48 @@ public class AsyncTests : TestContext
         // Arrange
         var person = _fixture.ValidPerson();
         var cut = RenderComponent<AsyncComponent>();
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
         cut.WaitForState(() => cut.Instance.Result is not null);
-        
+
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Valid);
     }
-    
+
     [Fact]
     public void GetFailuresFromLastValidation_EmailInvalid_ResultIsError()
     {
         // Arrange
         var person = _fixture.ValidPerson() with { EmailAddress = "invalid-email" };
         var cut = RenderComponent<AsyncComponent>();
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
         cut.WaitForState(() => cut.Instance.Result is not null);
-        
+
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Error);
     }
-    
+
     [Fact]
     public void GetFailuresFromLastValidation_AgeSuspect_ResultIsWarning()
     {
         // Arrange
         var person = _fixture.ValidPerson() with { Age = 69 };
         var cut = RenderComponent<AsyncComponent>();
-        
+
         // Act
         FillForm(cut, person);
         cut.Find("button").Click();
         cut.WaitForState(() => cut.Instance.Result is not null);
-        
+
         // Assert
         cut.Instance.Result.Should().Be(ValidationResultType.Warning);
     }
-   
+
 
     private static void FillForm(IRenderedComponent<AsyncComponent> cut, Person person)
     {
