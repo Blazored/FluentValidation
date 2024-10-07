@@ -1,0 +1,33 @@
+﻿<EditForm
+    Model="@_person"
+    OnValidSubmit="ValidSubmit"
+    OnInvalidSubmit="InvalidSubmit">
+
+    @if (DisableAssemblyScanning is null)
+    {
+        <FluentValidationValidator />
+    }
+    else
+    {
+        <FluentValidationValidator DisableAssemblyScanning="DisableAssemblyScanning.Value" />
+    }
+
+    <ValidationSummary/>
+
+    <p>
+        <label>First name: </label>
+        <InputText name="@nameof(_person.FirstName)" @bind-Value="@_person.FirstName"/>
+    </p>
+
+    <button type="submit">Save</button>
+</EditForm>
+
+@code {
+    [Parameter] public bool? DisableAssemblyScanning { get; set; }
+    private readonly Person _person = new();
+
+    internal ValidationResultType Result { get; private set; } = ValidationResultType.Valid;
+
+    private void ValidSubmit() => Result = ValidationResultType.Valid;
+    private void InvalidSubmit() => Result = ValidationResultType.Error;
+}

@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Results;
+
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
+
 using static FluentValidation.AssemblyScanner;
 
 namespace Blazored.FluentValidation;
@@ -46,12 +48,12 @@ public static class EditContextFluentValidationExtensions
 
             messages.Clear();
             fluentValidationValidator.LastValidationResult = new Dictionary<FieldIdentifier, List<ValidationFailure>>();
-            
+
             foreach (var validationResult in validationResults.Errors)
             {
                 var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
                 messages.Add(fieldIdentifier, validationResult.ErrorMessage);
-                
+
                 if (fluentValidationValidator.LastValidationResult.TryGetValue(fieldIdentifier, out var failures))
                 {
                     failures.Add(validationResult);
@@ -188,7 +190,7 @@ public static class EditContextFluentValidationExtensions
 
         var obj = editContext.Model;
         var nextTokenEnd = propertyPath.IndexOfAny(Separators);
-            
+
         // Optimize for a scenario when parsing isn't needed.
         if (nextTokenEnd < 0)
         {
@@ -215,8 +217,8 @@ public static class EditContextFluentValidationExtensions
                     // we've got an Item property
                     var indexerType = prop.GetIndexParameters()[0].ParameterType;
                     var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
-                        
-                    newObj = prop.GetValue(obj, new [] { indexerValue });
+
+                    newObj = prop.GetValue(obj, new[] { indexerValue });
                 }
                 else
                 {
@@ -261,7 +263,7 @@ public static class EditContextFluentValidationExtensions
             }
 
             obj = newObj;
-                
+
             nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
             if (nextTokenEnd < 0)
             {

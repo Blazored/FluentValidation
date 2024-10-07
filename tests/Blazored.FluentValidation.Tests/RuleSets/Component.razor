@@ -1,0 +1,53 @@
+﻿<EditForm
+    Model="@_person"
+    OnSubmit="Submit">
+
+    @if (IncludeWithAttribute)
+    {
+        @* <p>Can't implement.. bugged?</p> *@
+    }
+    else
+    {
+        <FluentValidationValidator @ref="_fluentValidationValidator"/>
+    }
+    <ValidationSummary/>
+
+    <p>
+        <label>First name: </label>
+        <InputText name="@nameof(Person.FirstName)" @bind-Value="@_person.FirstName"/>
+    </p>
+
+    <p>
+        <label>Last name: </label>
+        <InputText name="@nameof(_person.LastName)" @bind-Value="@_person.LastName"/>
+    </p>
+
+    <p>
+        <label>Age: </label>
+        <InputNumber name="@nameof(_person.Age)" @bind-Value="@_person.Age"/>
+    </p>
+
+    <p>
+        <label>Email Address: </label>
+        <InputText name="@nameof(_person.EmailAddress)" @bind-Value="@_person.EmailAddress"/>
+    </p>
+
+    <button type="submit">Save</button>
+</EditForm>
+
+@code {
+    [Parameter] public bool IncludeWithAttribute { get; set; }
+    [Parameter] public bool IncludeWithCode { get; set; }
+
+    private readonly Person _person = new();
+    private FluentValidationValidator? _fluentValidationValidator;
+
+    public ValidationResultType? Result { get; private set; }
+
+    protected void Submit()
+    {
+        var result = _fluentValidationValidator!.Validate(o => o.IncludeRuleSets("Names"));
+        Result = result ? ValidationResultType.Valid : ValidationResultType.Error;
+    }
+
+}

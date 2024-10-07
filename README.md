@@ -132,7 +132,7 @@ The second is when manually validating the model using the `Validate` or `Valida
 ```
 
 ## Access to full `ValidationFailure`
-If you need details about the specifics of a validation result (e.g. its `Severity), you can access the result of the 
+If you need details about the specifics of a validation result (e.g. its `Severity`), you can access the result of the 
 last validation by calling the `GetFailuresFromLastValidation` method on the `FluentValidationValidator` component.
 
 ```razor

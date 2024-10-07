@@ -1,9 +1,10 @@
 ﻿using System;
 using FluentValidation;
 using FluentValidation.Internal;
+using FluentValidation.Results;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using FluentValidation.Results;
 
 namespace Blazored.FluentValidation;
 
@@ -48,7 +49,7 @@ public class FluentValidationValidator : ComponentBase
         {
             throw new NullReferenceException(nameof(CurrentEditContext));
         }
-        
+
         ValidateOptions = options;
 
         try
@@ -61,7 +62,7 @@ public class FluentValidationValidator : ComponentBase
                 throw new InvalidOperationException("No pending ValidationResult found");
             }
 
-            await (Task<ValidationResult>) asyncValidationTask;
+            await (Task<ValidationResult>)asyncValidationTask;
 
             return !CurrentEditContext.GetValidationMessages().Any();
         }
@@ -95,10 +96,10 @@ public class FluentValidationValidator : ComponentBase
 
         if (fieldIdentifier is null)
             return LastValidationResult.Values.SelectMany(f => f).ToArray();
-        
+
         if (!LastValidationResult.TryGetValue(fieldIdentifier.Value, out var failures))
-             return Array.Empty<ValidationFailure>();
-        
+            return Array.Empty<ValidationFailure>();
+
         return failures.ToArray();
     }
 }
