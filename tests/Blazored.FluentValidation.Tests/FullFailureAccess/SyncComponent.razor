@@ -2,7 +2,7 @@
     Model="@_person"
     OnSubmit="Submit">
 
-    <FluentValidationValidator @ref="_fluentValidationValidator"/>
+    <FluentValidationValidator @ref="_fluentValidationValidator" Options="@(options => options.IncludeRuleSets("Names").IncludeRulesNotInRuleSet())"/>
     <ValidationSummary/>
 
     <p>
@@ -37,6 +37,7 @@
     protected void Submit()
     {
         _fluentValidationValidator!.Validate();
+        
         var lastResult = _fluentValidationValidator!.GetFailuresFromLastValidation();
         if (!lastResult.Any())
         {

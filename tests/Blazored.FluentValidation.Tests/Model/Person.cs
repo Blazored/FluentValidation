@@ -41,6 +41,11 @@
                 .NotNull().WithMessage(AgeRequired)
                 .GreaterThanOrEqualTo(0).WithMessage(AgeMin)
                 .LessThan(150).WithMessage(AgeMax);
+            
+            RuleFor(p => p.Age)
+                .NotEqual(69)
+                .WithMessage(AgeSuspect)
+                .WithSeverity(Severity.Warning);
 
             RuleFor(p => p.EmailAddress)
                 .NotEmpty().WithMessage(EmailRequired)
@@ -50,11 +55,6 @@
             RuleFor(p => p.Address!)
                 .SetValidator(new AddressValidator())
                 .When(p => p.Address is not null);
-
-            RuleFor(p => p.Age)
-                .NotEqual(69)
-                .WithMessage(AgeSuspect)
-                .WithSeverity(Severity.Warning);
         }
 
         private static async Task<bool> IsUniqueAsync(string? email)

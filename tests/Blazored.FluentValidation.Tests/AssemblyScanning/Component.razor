@@ -5,11 +5,11 @@
 
     @if (DisableAssemblyScanning is null)
     {
-        <FluentValidationValidator />
+        <FluentValidationValidator Options="@(options => options.IncludeRuleSets("Names"))"/>
     }
     else
     {
-        <FluentValidationValidator DisableAssemblyScanning="DisableAssemblyScanning.Value" />
+        <FluentValidationValidator DisableAssemblyScanning="DisableAssemblyScanning.Value" Options="@(options => options.IncludeRuleSets("Names"))"/>
     }
 
     <ValidationSummary/>

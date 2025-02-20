@@ -3,7 +3,7 @@
     OnValidSubmit="ValidSubmit"
     OnInvalidSubmit="InvalidSubmit">
 
-    <FluentValidationValidator/>
+    <FluentValidationValidator Options="@(options => options.IncludeRuleSets("Names").IncludeRulesNotInRuleSet())"/>
     <ValidationSummary/>
 
     <p>

@@ -2,7 +2,7 @@
     Model="@_person"
     OnSubmit="Submit">
 
-    <FluentValidationValidator @ref="_fluentValidationValidator"/>
+    <FluentValidationValidator @ref="_fluentValidationValidator" Options="@(options => options.IncludeRuleSets("Names").IncludeRulesNotInRuleSet())"/>
     <ValidationSummary/>
 
     <p>
