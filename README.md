@@ -97,11 +97,11 @@ If you're using async validation, you can use the `ValidateAsync` method on the 
 
 @code {
     private Person _person = new();
-	private FluentValidationValidator? _fluentValidationValidator;
+    private FluentValidationValidator? _fluentValidationValidator;
 
-    private void SubmitFormAsync()
+    private async void SubmitFormAsync()
     {
-		if (await _fluentValidationValidator!.ValidateAsync())
+        if (await _fluentValidationValidator!.ValidateAsync())
         {
             Console.WriteLine("Form Submitted Successfully!");
         }
@@ -128,5 +128,33 @@ The second is when manually validating the model using the `Validate` or `Valida
 
     private void PartialValidate()
         => _fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"));
+}
+```
+
+## Access to full `ValidationFailure`
+If you need details about the specifics of a validation result (e.g. its `Severity`), you can access the result of the 
+last validation by calling the `GetFailuresFromLastValidation` method on the `FluentValidationValidator` component.
+
+```razor
+<div class="validation-message @GetValidationClass()">
+    <input type="text" @bind="@_person.Name" />
+</div>
+
+@code {
+    private FluentValidationValidator? _fluentValidationValidator;
+
+    private string GetValidationClass() 
+    {
+        var lastResult = _fluentValidationValidator?.GetFailuresFromLastValidation();
+        if (lastResult is null || !lastResult.Any())
+        {
+            return "valid";
+        }
+        if (lastResult.Any(failure => failure.Severity == Severity.Error))
+        {
+            return "invalid";
+        }
+        return "warning";
+    }
 }
 ```

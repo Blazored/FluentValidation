@@ -24,7 +24,7 @@ public static class EditContextFluentValidationExtensions
 
         editContext.OnValidationRequested +=
             async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
-
+        
         editContext.OnFieldChanged +=
             async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
     }
@@ -82,7 +82,7 @@ public static class EditContextFluentValidationExtensions
         {
             return;
         }
-
+      
         var context = ConstructValidationContext(editContext, fluentValidationValidator);
 
         var fluentValidationValidatorSelector = context.Selector;
@@ -95,7 +95,7 @@ public static class EditContextFluentValidationExtensions
             new IntersectingCompositeValidatorSelector(new[] { fluentValidationValidatorSelector, changedPropertySelector });
 
         validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
-
+        
         if (validator is not null)
         {
             var validationResults = await validator.ValidateAsync(new ValidationContext<object>(editContext.Model, new PropertyChain(), compositeSelector));
