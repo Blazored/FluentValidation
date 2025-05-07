@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
+using FluentValidation.Results;
 using FluentValidation.Validators;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
+
 using static FluentValidation.AssemblyScanner;
 
 namespace Blazored.FluentValidation;
@@ -24,7 +26,7 @@ public static class EditContextFluentValidationExtensions
             async (sender, _) => await ValidateModel((EditContext)sender!, messages, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
 
         editContext.OnFieldChanged +=
-            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, validator);
+            async (_, eventArgs) => await ValidateField(editContext, messages, eventArgs.FieldIdentifier, serviceProvider, disableAssemblyScanning, fluentValidationValidator, validator);
     }
 
     private static async Task ValidateModel(EditContext editContext,
@@ -38,30 +40,28 @@ public static class EditContextFluentValidationExtensions
 
         if (validator is not null)
         {
-            ValidationContext<object> context;
-
-            if (fluentValidationValidator.ValidateOptions is not null)
-            {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
-            }
-            else if (fluentValidationValidator.Options is not null)
-            {
-                context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
-            }
-            else
-            {
-                context = new ValidationContext<object>(editContext.Model);
-            }
+            var context = ConstructValidationContext(editContext, fluentValidationValidator);
 
             var asyncValidationTask = validator.ValidateAsync(context);
             editContext.Properties[PendingAsyncValidation] = asyncValidationTask;
             var validationResults = await asyncValidationTask;
 
             messages.Clear();
+            fluentValidationValidator.LastValidationResult = new Dictionary<FieldIdentifier, List<ValidationFailure>>();
+
             foreach (var validationResult in validationResults.Errors)
             {
                 var fieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
                 messages.Add(fieldIdentifier, validationResult.ErrorMessage);
+
+                if (fluentValidationValidator.LastValidationResult.TryGetValue(fieldIdentifier, out var failures))
+                {
+                    failures.Add(validationResult);
+                }
+                else
+                {
+                    fluentValidationValidator.LastValidationResult.Add(fieldIdentifier, new List<ValidationFailure> { validationResult });
+                }
             }
 
             editContext.NotifyValidationStateChanged();
@@ -73,16 +73,37 @@ public static class EditContextFluentValidationExtensions
         FieldIdentifier fieldIdentifier,
         IServiceProvider serviceProvider,
         bool disableAssemblyScanning,
+        FluentValidationValidator fluentValidationValidator,
         IValidator? validator = null)
     {
-        var properties = new[] { fieldIdentifier.FieldName };
-        var context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+        var propertyPath = PropertyPathHelper.ToFluentPropertyPath(editContext, fieldIdentifier);
 
-        validator ??= GetValidatorForModel(serviceProvider, fieldIdentifier.Model, disableAssemblyScanning);
+        if (string.IsNullOrEmpty(propertyPath))
+        {
+            return;
+        }
+
+        var context = ConstructValidationContext(editContext, fluentValidationValidator);
+
+        var fluentValidationValidatorSelector = context.Selector;
+        var changedPropertySelector = ValidationContext<object>.CreateWithOptions(editContext.Model, strategy =>
+        {
+            strategy.IncludeProperties(propertyPath);
+        }).Selector;
+
+        var compositeSelector =
+            new IntersectingCompositeValidatorSelector(new[] { fluentValidationValidatorSelector, changedPropertySelector });
+
+        validator ??= GetValidatorForModel(serviceProvider, editContext.Model, disableAssemblyScanning);
 
         if (validator is not null)
         {
-            var validationResults = await validator.ValidateAsync(context);
+            var validationResults = await validator.ValidateAsync(new ValidationContext<object>(editContext.Model, new PropertyChain(), compositeSelector));
+            var errorMessages = validationResults.Errors
+                .Where(validationFailure => validationFailure.PropertyName == propertyPath)
+                .Select(validationFailure => validationFailure.ErrorMessage)
+                .Distinct();
+
             var validationRules = validator as IEnumerable<IValidationRule>;
             var members = new List<string>();
 
@@ -98,10 +119,10 @@ public static class EditContextFluentValidationExtensions
                         if (!members.Contains(compareTo) && rule.PropertyName == fieldIdentifier.FieldName)
                         {
                             members.Add(compareTo);
-                            var newProperties = properties.ToList();
+                            var newProperties = members.ToList();
                             newProperties.Add(compareTo);
-                            properties = newProperties.ToArray();
-                            context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(properties));
+                            members = newProperties;
+                            context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(members));
                             validationResults = await validator.ValidateAsync(context);
                         }
                     }
@@ -119,6 +140,27 @@ public static class EditContextFluentValidationExtensions
 
             editContext.NotifyValidationStateChanged();
         }
+    }
+
+    private static ValidationContext<object> ConstructValidationContext(EditContext editContext,
+        FluentValidationValidator fluentValidationValidator)
+    {
+        ValidationContext<object> context;
+
+        if (fluentValidationValidator.ValidateOptions is not null)
+        {
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.ValidateOptions);
+        }
+        else if (fluentValidationValidator.Options is not null)
+        {
+            context = ValidationContext<object>.CreateWithOptions(editContext.Model, fluentValidationValidator.Options);
+        }
+        else
+        {
+            context = new ValidationContext<object>(editContext.Model);
+        }
+
+        return context;
     }
 
     private static IValidator? GetValidatorForModel(IServiceProvider serviceProvider, object model, bool disableAssemblyScanning)
@@ -179,7 +221,7 @@ public static class EditContextFluentValidationExtensions
 
         var obj = editContext.Model;
         var nextTokenEnd = propertyPath.IndexOfAny(Separators);
-            
+
         // Optimize for a scenario when parsing isn't needed.
         if (nextTokenEnd < 0)
         {
@@ -206,8 +248,8 @@ public static class EditContextFluentValidationExtensions
                     // we've got an Item property
                     var indexerType = prop.GetIndexParameters()[0].ParameterType;
                     var indexerValue = Convert.ChangeType(nextToken.ToString(), indexerType);
-                        
-                    newObj = prop.GetValue(obj, new [] { indexerValue });
+
+                    newObj = prop.GetValue(obj, new[] { indexerValue });
                 }
                 else
                 {
@@ -217,6 +259,16 @@ public static class EditContextFluentValidationExtensions
                     {
                         var indexerValue = int.Parse(nextToken);
                         newObj = array[indexerValue];
+                    }
+                    else if (obj is IReadOnlyList<object> readOnlyList)
+                    {
+                        // Addresses an issue with collection expressions in C# 12 regarding IReadOnlyList:
+                        // Generates a <>z__ReadOnlyArray which:
+                        // - lacks an Item property, and
+                        // - cannot be cast to object[] successfully.
+                        // This workaround accesses elements directly using an indexer.
+                        var indexerValue = int.Parse(nextToken);
+                        newObj = readOnlyList[indexerValue];
                     }
                     else
                     {
@@ -242,7 +294,7 @@ public static class EditContextFluentValidationExtensions
             }
 
             obj = newObj;
-                
+
             nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
             if (nextTokenEnd < 0)
             {
