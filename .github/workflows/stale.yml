@@ -1,0 +1,56 @@
+name: Stale Items
+on:
+  schedule:
+  - cron: "0 6 * * 0"
+
+  workflow_dispatch:
+
+jobs:
+  stale:
+    name: Mark and Close Stale Items
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v10
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          days-before-stale: 365
+          days-before-close: 45
+
+          # Issue configuration
+          stale-issue-label: "stale"
+          close-issue-label: "closed:stale"
+          exempt-issue-labels: "pinned,security,enhancement,bug,backlog,epic"
+
+          stale-issue-message: |
+            ## ⏰ Stale Issue
+
+            This issue has had no activity for 1 year.
+            It will be closed in 45 days unless there is new activity.
+            To keep it open, comment or remove the `stale` label.
+
+          close-issue-message: |
+            ## 🔒 Closed: Inactive Issue
+
+            Closed after 45 days of inactivity.
+            To reopen, comment with a reason and a maintainer will review.
+
+          # PR configuration
+          stale-pr-label: "stale"
+          close-pr-label: "closed:stale"
+          exempt-pr-labels: "pinned,work-in-progress,ready-for-review"
+
+          stale-pr-message: |
+            ## ⏰ Stale Pull Request
+
+            No activity for 1 year. Will close in 45 days unless updated.
+            To keep open, push commits, comment, or remove the `stale` label.
+
+          close-pr-message: |
+            ## 🔒 Closed: Inactive PR
+
+            Closed after 45 days of inactivity.
+            To continue, reopen or submit a new PR and reference this one.
