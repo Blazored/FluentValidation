@@ -19,7 +19,8 @@ jobs:
 
           days-before-stale: 365
           days-before-close: 45
-
+          operations-per-run: 100
+          
           # Issue configuration
           stale-issue-label: "stale"
           close-issue-label: "closed:stale"
