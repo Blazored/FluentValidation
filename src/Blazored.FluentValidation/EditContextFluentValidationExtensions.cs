@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Results;
-
+using FluentValidation.Validators;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -82,7 +82,7 @@ public static class EditContextFluentValidationExtensions
         {
             return;
         }
-        
+      
         var context = ConstructValidationContext(editContext, fluentValidationValidator);
 
         var fluentValidationValidatorSelector = context.Selector;
@@ -90,7 +90,7 @@ public static class EditContextFluentValidationExtensions
         {
             strategy.IncludeProperties(propertyPath);
         }).Selector;
-        
+
         var compositeSelector =
             new IntersectingCompositeValidatorSelector(new[] { fluentValidationValidatorSelector, changedPropertySelector });
 
@@ -104,8 +104,39 @@ public static class EditContextFluentValidationExtensions
                 .Select(validationFailure => validationFailure.ErrorMessage)
                 .Distinct();
 
-            messages.Clear(fieldIdentifier);
-            messages.Add(fieldIdentifier, errorMessages);
+            var validationRules = validator as IEnumerable<IValidationRule>;
+            var members = new List<string>();
+
+            if (validationRules != null)
+            {
+                foreach (var rule in validationRules)
+                {
+                    var maybeComparison = rule.Components.FirstOrDefault()?.Validator;
+
+                    if (maybeComparison != null && maybeComparison is IComparisonValidator comparisonValidator)
+                    {
+                        var compareTo = comparisonValidator.MemberToCompare.Name;
+                        if (!members.Contains(compareTo) && rule.PropertyName == fieldIdentifier.FieldName)
+                        {
+                            members.Add(compareTo);
+                            var newProperties = members.ToList();
+                            newProperties.Add(compareTo);
+                            members = newProperties;
+                            context = new ValidationContext<object>(fieldIdentifier.Model, new PropertyChain(), new MemberNameValidatorSelector(members));
+                            validationResults = await validator.ValidateAsync(context);
+                        }
+                    }
+                    else
+                        members.Add(fieldIdentifier.FieldName);
+                }
+            }
+
+            foreach (var member in members)
+            {
+                var field = new FieldIdentifier(fieldIdentifier.Model, member);
+                messages.Clear(field);
+                messages.Add(field, validationResults.Errors.Where(x => x.PropertyName == field.FieldName).Select(error => error.ErrorMessage));
+            }
 
             editContext.NotifyValidationStateChanged();
         }

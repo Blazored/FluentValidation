@@ -63,6 +63,18 @@
         <ValidationMessage For="@(() => _person.Address.Postcode)" />
     </p>
 
+    <p>
+        <label>Start Lucky Number Range: </label>
+        <InputNumber @bind-Value="@_person.StartLuckyNumberRange" />
+        <ValidationMessage For="@(() => _person.StartLuckyNumberRange)" />
+    </p>
+
+    <p>
+        <label>End Lucky Number Range: </label>
+        <InputNumber @bind-Value="@_person.EndLuckyNumberRange" />
+        <ValidationMessage For="@(() => _person.EndLuckyNumberRange)" />
+    </p>
+
     <button type="submit">Save</button>
 
 </EditForm>
