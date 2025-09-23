@@ -1,0 +1,48 @@
+@* Needs to be in different namespace than Blazored.FluentValidation.*. Otherwise ValidationContext cannot be resolved in .net8*@
+@namespace BlazoredFluentValidation.Tests.ParamValidationContext
+<EditForm
+    Model="@_address"
+    OnValidSubmit="ValidSubmit"
+    OnInvalidSubmit="InvalidSubmit">
+
+    <FluentValidationValidator ConfigureContext="@(ctx => SetContextData(ctx.RootContextData))"/>
+    <ValidationSummary/>
+
+    <p>
+        <label>Address Line 1: </label>
+        <InputText name="@nameof(_address.Line1)" @bind-Value="@_address.Line1"/>
+    </p>
+    
+    <p>
+        <label>Town: </label>
+        <InputText name="@nameof(_address.Town)" @bind-Value="@_address.Town"/>
+    </p>
+
+    <p>
+        <label>County: </label>
+        <InputText name="@nameof(_address.County)" @bind-Value="@_address.County"/>
+    </p>
+
+    <p>
+        <label>Postcode: </label>
+        <InputText name="@nameof(_address.Postcode)" @bind-Value="@_address.Postcode"/>
+    </p>
+    <button type="submit">Save</button>
+</EditForm>
+
+@code {
+    private readonly Address _address = new();
+    internal readonly Dictionary<string, object> ContextData = new(); // Internal to be used in tests to control component behavior
+    internal ValidationResultType? SubmitResult { get; set; } = ValidationResultType.Valid;
+
+    private void ValidSubmit() => SubmitResult = ValidationResultType.Valid;
+    private void InvalidSubmit() => SubmitResult = ValidationResultType.Error;
+
+    private void SetContextData(IDictionary<string, object> rootContextData)
+    {
+        foreach (var item in ContextData)
+        {
+            rootContextData[item.Key] = item.Value;
+        }
+    }
+}

@@ -17,6 +17,7 @@ public class FluentValidationValidator : ComponentBase
     [Parameter] public IValidator? Validator { get; set; }
     [Parameter] public bool DisableAssemblyScanning { get; set; }
     [Parameter] public Action<ValidationStrategy<object>>? Options { get; set; }
+    [Parameter] public Action<ValidationContext<object>>? ConfigureContext { get; set; }
     internal Action<ValidationStrategy<object>>? ValidateOptions { get; set; }
     internal Dictionary<FieldIdentifier, List<ValidationFailure>>? LastValidationResult { get; set; }
 

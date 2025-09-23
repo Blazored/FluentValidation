@@ -11,6 +11,7 @@
 
     public class AddressValidator : AbstractValidator<Address>
     {
+        public const string IgnorePostcodeFlag = "IgnorePostcode";
         public const string Line1Required = "You must enter Line 1";
         public const string TownRequired = "You must enter a town";
         public const string CountyRequired = "You must enter a county";
@@ -21,7 +22,11 @@
             RuleFor(p => p.Line1).NotEmpty().WithMessage(Line1Required);
             RuleFor(p => p.Town).NotEmpty().WithMessage(TownRequired);
             RuleFor(p => p.County).NotEmpty().WithMessage(CountyRequired);
-            RuleFor(p => p.Postcode).NotEmpty().WithMessage(PostcodeRequired);
+            RuleFor(p => p.Postcode)
+                .NotEmpty().WithMessage(PostcodeRequired)
+                .When((_, ctx) =>
+                    !ctx.RootContextData.TryGetValue(IgnorePostcodeFlag, out var ignorePostcode)
+                    || ignorePostcode is false);
         }
     }
 }
