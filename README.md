@@ -5,6 +5,17 @@ A library for using FluentValidation with Blazor
 [![Nuget downloads](https://img.shields.io/nuget/dt/Blazored.FluentValidation?logo=nuget)](https://www.nuget.org/packages/Blazored.FluentValidation/)
 ![Build & Test Main](https://github.com/Blazored/FluentValidation/workflows/Build%20&%20Test%20Main/badge.svg)
 
+## 📢 Important Notice from Contributor
+
+Unfortunately, I'm no longer able to maintain this project. The NuGet key has expired, and I don't have a way to renew it. Rather than trying to patch things up, I've decided to channel my efforts into a complete rewrite.
+
+Introducing [**Blazilla**](https://github.com/loresoft/Blazilla) — a fresh take on FluentValidation for Blazor. This new project was built from the ground up to address many of the lingering issues in the original implementation. If you're looking for a modern, actively maintained solution, I encourage you to check it out.
+
+🔗 [GitHub – Blazilla](https://github.com/loresoft/Blazilla)
+
+Thanks for your support!  
+~ Paul
+
 ## Installing
 
 You can install from Nuget using the following command:
