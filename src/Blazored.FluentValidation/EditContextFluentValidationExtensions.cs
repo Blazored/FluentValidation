@@ -99,13 +99,20 @@ public static class EditContextFluentValidationExtensions
         if (validator is not null)
         {
             var validationResults = await validator.ValidateAsync(new ValidationContext<object>(editContext.Model, new PropertyChain(), compositeSelector));
-            var errorMessages = validationResults.Errors
-                .Where(validationFailure => validationFailure.PropertyName == propertyPath)
-                .Select(validationFailure => validationFailure.ErrorMessage)
-                .Distinct();
+
+            List<string> errorMessages = new();
+            foreach (var validationResult in validationResults.Errors)
+            {
+                var newFieldIdentifier = ToFieldIdentifier(editContext, validationResult.PropertyName);
+                var newPropertyPath = PropertyPathHelper.ToFluentPropertyPath(editContext, newFieldIdentifier);
+                if (propertyPath == newPropertyPath)
+                {
+                    errorMessages.Add(validationResult.ErrorMessage);
+                }
+            }
 
             messages.Clear(fieldIdentifier);
-            messages.Add(fieldIdentifier, errorMessages);
+            messages.Add(fieldIdentifier, errorMessages.Distinct());
 
             editContext.NotifyValidationStateChanged();
         }
@@ -267,6 +274,13 @@ public static class EditContextFluentValidationExtensions
             nextTokenEnd = propertyPathAsSpan.IndexOfAny(Separators);
             if (nextTokenEnd < 0)
             {
+                // It's a collection of simple types
+                if (propertyPathAsSpan.EndsWith("]"))
+                {
+                    propertyPathAsSpan = propertyPathAsSpan.Slice(0, propertyPathAsSpan.Length - 1);
+                    return new FieldIdentifier(obj, propertyPathAsSpan.ToString());
+                }
+
                 return new FieldIdentifier(obj, propertyPathAsSpan.ToString());
             }
         }
