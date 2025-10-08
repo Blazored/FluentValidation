@@ -129,6 +129,8 @@ public static class EditContextFluentValidationExtensions
             context = new ValidationContext<object>(editContext.Model);
         }
 
+        fluentValidationValidator.ConfigureContext?.Invoke(context);
+
         return context;
     }
 
