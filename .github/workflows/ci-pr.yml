@@ -7,16 +7,20 @@ on:
 env:
     PROJECT_NAME: Blazored.FluentValidation
     NETCORE_VERSION: '8.0.x'
+    DOTNET_CONSOLE_ANSI_COLOR: true
+    #ref https://github.com/dotnet/command-line-api/issues/1710
+    DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
+    TERM: xterm
 
 jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Setting up .NET SDK ${{ env.NETCORE_VERSION }}...
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.NETCORE_VERSION }}
 
@@ -25,3 +29,6 @@ jobs:
 
     - name: Building project...
       run: dotnet build --configuration Release --no-restore src/$PROJECT_NAME/$PROJECT_NAME.csproj
+
+    - name: Running tests...
+      run: dotnet test 
